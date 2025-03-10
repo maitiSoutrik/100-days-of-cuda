@@ -1,0 +1,30 @@
+# CUDA compiled files
+*.o
+*.out
+*.exe
+*.i
+*.ii
+*.gpu
+*.ptx
+*.cubin
+*.fatbin
+
+# Compiled binaries (day-specific executables)
+day*/vector_add
+day*/matrix_mul
+day*/*/bin
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Build directories
+build/
+bin/
+obj/
