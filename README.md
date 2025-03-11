@@ -21,6 +21,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | Day | Date | Description | Code |
 |-----|------|-------------|------|
 | 1   | 2025-03-10 | Getting Started with CUDA - Vector Addition | [Link](./day001/) |
+| 2   | 2025-03-11 | Matrix Addition in CUDA | [Link](./day002/) |
 
 ## Rules
 

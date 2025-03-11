@@ -1,0 +1,24 @@
+cmake_minimum_required(VERSION 3.10)
+project(day002 LANGUAGES CXX CUDA)
+
+# Set CUDA architecture
+set(CMAKE_CUDA_ARCHITECTURES 50)
+# Uncomment the line below when compiling on Jetson Nano
+# set(CMAKE_CUDA_ARCHITECTURES 53)
+
+# Set optimization level
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3")
+
+# Add executable
+add_executable(matrix_add matrix_add.cu)
+
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Set CUDA standard
+set(CMAKE_CUDA_STANDARD 11)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+
+# Install target
+install(TARGETS matrix_add DESTINATION bin)
