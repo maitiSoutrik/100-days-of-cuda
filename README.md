@@ -20,7 +20,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 
 | Day | Date | Description | Code |
 |-----|------|-------------|------|
-| 1   | TBD  | TBD         | [Link](./day001/) |
+| 1   | 2025-03-10 | Getting Started with CUDA - Vector Addition | [Link](./day001/) |
 
 ## Rules
 
