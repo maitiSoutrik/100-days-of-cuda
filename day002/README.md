@@ -74,9 +74,10 @@ We use:
 
 ## Compilation and Execution
 
-Compile the program using CMake:
+Compile the program using the top-level CMake build:
 
 ```bash
+# From the root directory of the repository
 mkdir -p build
 cd build
 cmake ..
@@ -86,6 +87,18 @@ make
 Run the executable:
 
 ```bash
+# From the build directory
+./day002/matrix_add
+```
+
+Alternatively, you can also build just this day's project:
+
+```bash
+# From the day002 directory
+mkdir -p build
+cd build
+cmake ..
+make
 ./matrix_add
 ```
 
