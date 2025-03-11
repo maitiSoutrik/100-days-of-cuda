@@ -112,11 +112,55 @@ The program will:
 4. Display the resulting matrix
 
 
+## Output from Jetson Nano
+
+```bash
+drboom@JetNano ~/g/1/build> ./day002/matrix_add 
+Device name: NVIDIA Tegra X1
+Compute capability: 5.3
+Total global memory: 3.87 GB
+Matrix dimensions: 1024 x 1024 (Total elements: 1048576)
+
+----- CPU Execution -----
+CPU execution time: 3.90 ms
+
+----- GPU Execution -----
+CUDA kernel launch with grid of 64 x 64 blocks, each with 16 x 16 threads
+GPU kernel execution time: 7.60 ms
+GPU total time (with memory transfers): 27.39 ms
+
+All tests PASSED
+
+----- Performance Comparison -----
+CPU execution time: 3.90 ms
+GPU kernel execution time: 7.60 ms
+GPU total time (with memory transfers): 27.39 ms
+Speedup (kernel only): 0.51x
+Speedup (with transfers): 0.14x
+
+Matrix addition completed successfully!
+```
+
+## Performance Analysis
+
+Interestingly, the performance results for matrix addition show that the CPU implementation outperforms the GPU implementation in this case. This is contrary to what we might expect, but there are several factors that explain this result:
+
+1. **Problem Size**: The 1024×1024 matrix size (approximately 1 million elements) is relatively small for GPU computation. GPUs excel at massive parallelism with much larger datasets.
+
+2. **Memory Transfer Overhead**: The time required to transfer data between the host and device (23.79 ms) dominates the total execution time, accounting for about 87% of the total GPU time.
+
+3. **Operation Complexity**: Matrix addition is a memory-bound operation with a very simple computation (just addition). The ratio of computation to memory access is low, which doesn't play to the GPU's strengths.
+
+4. **Tegra X1 Architecture**: The Jetson Nano's Tegra X1 GPU is designed for embedded applications and has fewer CUDA cores compared to desktop GPUs, limiting its parallel processing capability.
+
+These results highlight an important lesson in GPU programming: not all problems benefit from GPU acceleration, especially when the computation is simple and the data transfer overhead is significant.
+
 ## Next Steps
 
-Possible extensions to this example:
+Based on these results, some interesting next steps would be:
 
-- Support for larger matrices
-- Performance timing and comparison with CPU implementation
-- Using shared memory to optimize performance
-- Implementing other matrix operations (multiplication, transpose, etc.)
+- Experimenting with larger matrix sizes to find the crossover point where GPU becomes more efficient
+- Implementing matrix multiplication, which has higher computational intensity and should benefit more from GPU parallelism
+- Exploring techniques to reduce memory transfer overhead, such as using pinned memory or CUDA streams for asynchronous operations
+- Using shared memory to optimize the matrix operations
+- Implementing other matrix operations (transpose, etc.)
