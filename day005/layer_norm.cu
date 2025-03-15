@@ -211,14 +211,14 @@ int main(int argc, char** argv) {
     CUDA_CHECK(cudaMemcpy(h_output_basic, d_output, matrix_size, cudaMemcpyDeviceToHost));
     
     // Shared memory implementation
-    int threadsPerBlock = 256; // Use 256 threads per block
-    int blocksPerGrid = rows;  // One block per row
+    int threadsPerBlockShared = 256; // Use 256 threads per block
+    int blocksPerGridShared = rows;  // One block per row
     // Need space for row data + mean + stddev
     size_t shared_mem_size = (cols + 2) * sizeof(float);
     
     // Timed run - Shared memory kernel
     cudaEventRecord(start);
-    layerNormSharedKernel<<<blocksPerGrid, threadsPerBlock, shared_mem_size>>>(d_input, d_output, rows, cols, epsilon);
+    layerNormSharedKernel<<<blocksPerGridShared, threadsPerBlockShared, shared_mem_size>>>(d_input, d_output, rows, cols, epsilon);
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
     
