@@ -58,13 +58,36 @@ The implementation compares three approaches:
 
 The program outputs the execution time and verification results for each approach, as well as the speedup achieved by the GPU implementations.
 
+### Performance on Nvidia Jetson Nano
+
+```bash
+Layer Normalization on matrix of size 1024x256
+CPU Time: 3.7992 ms
+GPU Basic Kernel Time: 16.2066 ms, Verification: PASSED
+GPU Shared Memory Kernel Time: 12.4531 ms, Verification: PASSED
+
+Speedups:
+Basic Kernel vs CPU: 0.234424x
+Shared Memory Kernel vs CPU: 0.30508x
+```
+
 ### Performance Analysis
 
-The performance of each implementation depends on the matrix size and hardware:
+The results from the Jetson Nano reveal several interesting insights:
 
-- For small matrices, the CPU implementation may be faster due to the overhead of data transfer to the GPU.
-- For larger matrices, the GPU implementations show significant speedups, with the advanced kernel typically performing the best.
-- The shared memory kernel demonstrates the importance of optimizing memory access patterns in CUDA programming.
+1. **CPU outperforms GPU**: The CPU implementation is significantly faster than both GPU implementations (about 3-4x faster). This is because:
+   - The Layer Normalization operation has a low arithmetic intensity (few calculations per memory access)
+   - The overhead of transferring data to and from the GPU memory is significant
+   - The Jetson Nano's CPU might be relatively powerful compared to its GPU for this specific workload
+
+2. **Shared Memory Optimization**: The shared memory kernel shows a notable improvement over the basic kernel (about 23% faster), demonstrating that:
+   - Reducing global memory accesses through shared memory is effective
+   - Having a single thread compute mean and variance reduces redundant calculations
+   - Proper thread synchronization is crucial for correct results
+
+3. **Memory Transfer Bottleneck**: Despite the optimizations, both GPU implementations are slower than the CPU version, highlighting that:
+   - For operations with low arithmetic intensity, the memory transfer overhead can dominate
+   - The computation-to-communication ratio is unfavorable for this particular problem size
 
 ## Learning Resources
 
