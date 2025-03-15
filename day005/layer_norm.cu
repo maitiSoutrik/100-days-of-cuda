@@ -70,39 +70,52 @@ __global__ void layerNormBasicKernel(const float* input, float* output, int rows
 
 // Optimized Layer Normalization kernel using shared memory
 __global__ void layerNormSharedKernel(const float* input, float* output, int rows, int cols, float epsilon) {
-    // Calculate row index
-    int row = blockIdx.x * blockDim.x + threadIdx.x;
+    // Calculate row index - one thread block handles one row
+    int row = blockIdx.x;
+    int tid = threadIdx.x;  // Thread ID within the block
     
     if (row < rows) {
         // Use shared memory for row-wise computation
         extern __shared__ float shared[];
-        float* row_data = shared;
         
-        // Copy row data to shared memory
-        for (int col = threadIdx.y; col < cols; col += blockDim.y) {
-            row_data[col] = input[row * cols + col];
+        // Copy row data to shared memory with coalesced access
+        for (int col = tid; col < cols; col += blockDim.x) {
+            shared[col] = input[row * cols + col];
         }
         __syncthreads();
         
-        // Compute mean
-        float mean = 0.0f;
-        for (int col = 0; col < cols; col++) {
-            mean += row_data[col];
+        // First thread in block computes mean and variance
+        if (tid == 0) {
+            // Compute mean
+            float mean = 0.0f;
+            for (int col = 0; col < cols; col++) {
+                mean += shared[col];
+            }
+            mean /= cols;
+            
+            // Store mean in shared memory for other threads to use
+            shared[cols] = mean;
+            
+            // Compute variance
+            float variance = 0.0f;
+            for (int col = 0; col < cols; col++) {
+                float diff = shared[col] - mean;
+                variance += diff * diff;
+            }
+            variance /= cols;
+            
+            // Store stddev in shared memory for other threads to use
+            shared[cols + 1] = sqrtf(variance + epsilon);
         }
-        mean /= cols;
+        __syncthreads();
         
-        // Compute variance
-        float variance = 0.0f;
-        for (int col = 0; col < cols; col++) {
-            float diff = row_data[col] - mean;
-            variance += diff * diff;
-        }
-        variance /= cols;
+        // All threads read the mean and stddev computed by thread 0
+        float mean = shared[cols];
+        float stddev = shared[cols + 1];
         
-        // Normalize
-        float stddev = sqrtf(variance + epsilon);
-        for (int col = threadIdx.y; col < cols; col += blockDim.y) {
-            output[row * cols + col] = (row_data[col] - mean) / stddev;
+        // All threads normalize their portion of the data
+        for (int col = tid; col < cols; col += blockDim.x) {
+            output[row * cols + col] = (shared[col] - mean) / stddev;
         }
     }
 }
@@ -198,13 +211,14 @@ int main(int argc, char** argv) {
     CUDA_CHECK(cudaMemcpy(h_output_basic, d_output, matrix_size, cudaMemcpyDeviceToHost));
     
     // Shared memory implementation
-    dim3 blockDim(32, 32); // 32 threads per row, 32 rows per block
-    dim3 gridDim((rows + blockDim.x - 1) / blockDim.x);
-    size_t shared_mem_size = cols * sizeof(float);
+    int threadsPerBlock = 256; // Use 256 threads per block
+    int blocksPerGrid = rows;  // One block per row
+    // Need space for row data + mean + stddev
+    size_t shared_mem_size = (cols + 2) * sizeof(float);
     
     // Timed run - Shared memory kernel
     cudaEventRecord(start);
-    layerNormSharedKernel<<<gridDim, blockDim, shared_mem_size>>>(d_input, d_output, rows, cols, epsilon);
+    layerNormSharedKernel<<<blocksPerGrid, threadsPerBlock, shared_mem_size>>>(d_input, d_output, rows, cols, epsilon);
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
     
