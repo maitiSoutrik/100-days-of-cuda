@@ -24,6 +24,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 2   | 2025-03-11 | Matrix Addition in CUDA | [Link](./day002/) |
 | 3   | 2025-03-12 | Matrix Multiplication in CUDA | [Link](./day003/) |
 | 4   | 2025-03-13 | Parallel Reduction - Partial Sum | [Link](./day004/) |
+| 5   | 2025-03-14 | Layer Normalization in CUDA | [Link](./day005/) |
 
 ## Rules
 
