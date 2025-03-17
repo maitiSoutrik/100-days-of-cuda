@@ -12,14 +12,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: "${{ secrets.JETSON_SSH_KEY }}"
-
-      - name: Add Jetson to known hosts
+      - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
+          echo "${{ secrets.JETSON_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H 192.168.1.184 >> ~/.ssh/known_hosts
 
       - name: Deploy to Jetson Nano
@@ -60,5 +57,5 @@ jobs:
           
           # Copy and execute the deployment script on the Jetson Nano
           chmod +x deploy.sh
-          scp deploy.sh drboom@192.168.1.184:~/deploy.sh
-          ssh drboom@192.168.1.184 "chmod +x ~/deploy.sh && ~/deploy.sh && rm ~/deploy.sh"
+          scp -i ~/.ssh/id_ed25519 deploy.sh drboom@192.168.1.184:~/deploy.sh
+          ssh -i ~/.ssh/id_ed25519 drboom@192.168.1.184 "chmod +x ~/deploy.sh && ~/deploy.sh && rm ~/deploy.sh"
