@@ -26,6 +26,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 4   | 2025-03-13 | Parallel Reduction - Partial Sum | [Link](./day004/) |
 | 5   | 2025-03-14 | Layer Normalization in CUDA | [Link](./day005/) |
 | 6   | 2025-03-15 | Matrix Transpose with CPU/GPU Benchmarking | [Link](./day006/) |
+| 7   | 2025-03-16 | 1D & 2D Convolution in CUDA | [Link](./day007/) |
 
 ## Rules
 
