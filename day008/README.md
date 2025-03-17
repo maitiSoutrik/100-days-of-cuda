@@ -48,6 +48,32 @@ Check out the `brent_kung.cu` file for the complete implementation.
 - It uses fewer operations than the Kogge-Stone algorithm (another parallel prefix sum algorithm), making it more work-efficient.
 - However, it may have slightly higher latency due to its tree-based approach.
 
+## Execution Results
+
+Below are the actual execution results from running the implementation on a Jetson Nano:
+
+```bash
+Demonstrating Brent-Kung Algorithm Steps:
+Input array: 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 
+
+Up-sweep (Reduction) Phase:
+Step (d=4): 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 
+Step (d=2): 1.0 3.0 3.0 7.0 5.0 11.0 7.0 15.0 
+Step (d=1): 1.0 3.0 3.0 10.0 5.0 11.0 7.0 26.0 
+
+Down-sweep Phase:
+Initial: 1.0 3.0 3.0 10.0 5.0 11.0 7.0 0.0 
+Step (d=1): 1.0 3.0 3.0 0.0 5.0 11.0 7.0 10.0 
+Step (d=2): 1.0 0.0 3.0 3.0 5.0 10.0 7.0 21.0 
+Step (d=4): 0.0 1.0 3.0 6.0 10.0 15.0 21.0 28.0 
+
+Final Result (Exclusive Scan):
+Input:  1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 
+Output: 0.0 1.0 3.0 6.0 10.0 15.0 21.0 28.0 
+```
+
+These results demonstrate how the algorithm transforms the input array `[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]` into the exclusive prefix sum `[0.0, 1.0, 3.0, 6.0, 10.0, 15.0, 21.0, 28.0]`, where each element at position i contains the sum of all elements from positions 0 to i-1.
+
 ## References
 
 - Brent, R. P., & Kung, H. T. (1980). A regular layout for parallel adders. IEEE Transactions on Computers, C-31, 260-264.
