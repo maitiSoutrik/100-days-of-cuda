@@ -52,38 +52,51 @@ jobs:
           cd "${BUILD_DIR}"
           cmake ..
           
-          # Get the latest day directory
-          LATEST_DAY=$(ls -d ${REPO_DIR}/day* | sort -V | tail -n 1)
-          LATEST_DAY_NAME=$(basename "${LATEST_DAY}")
-          
-          # Build just the latest day's code
-          echo "Building ${LATEST_DAY_NAME}..."
-          make -j4 -C "${BUILD_DIR}/${LATEST_DAY_NAME}"
-          
-          # Run the built binary and capture output
-          echo "Running the latest binary..."
-          cd "${BUILD_DIR}/${LATEST_DAY_NAME}"
-          
-          # Find all executable files in the directory
-          EXECUTABLES=$(find . -type f -executable -not -path "*/\.*" | sort)
-          
           # Create logs directory if it doesn't exist
           LOGS_DIR="${REPO_DIR}/logs"
           mkdir -p "${LOGS_DIR}"
           
-          # Run each executable and capture output
-          for EXEC in $EXECUTABLES; do
-            EXEC_NAME=$(basename "${EXEC}")
-            echo "Running ${EXEC_NAME}..."
-            LOG_FILE="${LOGS_DIR}/${LATEST_DAY_NAME}_${EXEC_NAME}.log"
+          # Build and run all days' code
+          echo "Building and running all days..."
+          
+          # First, build all projects
+          echo "Building all projects..."
+          cd "${BUILD_DIR}"
+          cmake --build .
+          
+          # Get all day directories
+          DAY_DIRS=$(ls -d ${REPO_DIR}/day* | sort -V)
+          
+          # Process each day directory
+          for DAY in $DAY_DIRS; do
+            DAY_NAME=$(basename "${DAY}")
+            BUILD_DAY_DIR="${BUILD_DIR}/${DAY_NAME}"
             
-            # Run the executable and capture both stdout and stderr
-            ${EXEC} > "${LOG_FILE}" 2>&1
-            
-            # Print the first few lines of output
-            echo "Output preview (see ${LOG_FILE} for full output):"
-            head -n 20 "${LOG_FILE}"
-            echo ""
+            # Check if the build directory exists
+            if [ -d "${BUILD_DAY_DIR}" ]; then
+              echo "\n===== Processing ${DAY_NAME} =====\n"
+              
+              # Find all executable files in the directory
+              cd "${BUILD_DAY_DIR}"
+              EXECUTABLES=$(find . -type f -executable -not -path "*/\.*" | sort)
+              
+              # Run each executable and capture output
+              for EXEC in $EXECUTABLES; do
+                EXEC_NAME=$(basename "${EXEC}")
+                echo "Running ${EXEC_NAME}..."
+                LOG_FILE="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}.log"
+                
+                # Run the executable and capture both stdout and stderr
+                ${EXEC} > "${LOG_FILE}" 2>&1
+                
+                # Print the first few lines of output
+                echo "Output preview (see ${LOG_FILE} for full output):"
+                head -n 20 "${LOG_FILE}"
+                echo ""
+              done
+            else
+              echo "Skipping ${DAY_NAME} - no build directory found"
+            fi
           done
           
           echo "Deployment complete! All binaries have been built and run."
