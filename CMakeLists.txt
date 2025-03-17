@@ -9,7 +9,8 @@ add_subdirectory(day004)
 add_subdirectory(day005)
 add_subdirectory(day006)
 add_subdirectory(day007)
+add_subdirectory(day008)
 
 # Add more days as they are created
-# add_subdirectory(day008)
+# add_subdirectory(day009)
 # etc.

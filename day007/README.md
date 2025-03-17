@@ -15,7 +15,7 @@ In 1D convolution, we slide a kernel (a small array of weights) over a 1D input 
 Mathematically, for a 1D input signal `x` of length `n` and a kernel `k` of length `m`, the 1D convolution `y` is defined as:
 
 ```math
-y[i] = Σ(j=0 to m-1) k[j] * x[i+j-m/2]
+y[i] = Σ(j=0 to m-1) k[j] * x[i + j - m / 2]
 ```
 
 Where appropriate padding is applied to handle boundary conditions.
@@ -27,7 +27,7 @@ Where appropriate padding is applied to handle boundary conditions.
 Mathematically, for a 2D input `x` of size `n×n` and a kernel `k` of size `m×m`, the 2D convolution `y` is defined as:
 
 ```math
-y[i,j] = Σ(p=0 to m-1) Σ(q=0 to m-1) k[p,q] * x[i+p-m/2, j+q-m/2]
+y[i,j] = Σ(p=0 to m-1) Σ(q=0 to m-1) k[p,q] * x[i + p - m / 2, j + q - m / 2]
 ```
 
 Again, appropriate padding is applied to handle boundary conditions.
