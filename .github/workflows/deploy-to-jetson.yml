@@ -27,14 +27,22 @@ jobs:
           set -e
 
           # Define variables
-          REPO_DIR="~/git_repos/100-days-of-cuda"
+          REPO_DIR="/home/drboom/git_repos/100-days-of-cuda"
           BUILD_DIR="${REPO_DIR}/build"
           
-          # Update repository
-          echo "Updating repository..."
-          cd "${REPO_DIR}"
-          git fetch
-          git pull origin development
+          # Create repository directory if it doesn't exist
+          if [ ! -d "${REPO_DIR}" ]; then
+            echo "Creating repository directory..."
+            mkdir -p "${REPO_DIR}"
+            cd "${REPO_DIR}"
+            git clone https://github.com/maitiSoutrik/100-days-of-cuda.git .
+          else
+            # Update repository
+            echo "Updating repository..."
+            cd "${REPO_DIR}"
+            git fetch
+            git pull origin development
+          fi
           
           # Create build directory if it doesn't exist
           mkdir -p "${BUILD_DIR}"
