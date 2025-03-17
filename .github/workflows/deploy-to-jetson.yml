@@ -60,7 +60,34 @@ jobs:
           echo "Building ${LATEST_DAY_NAME}..."
           make -j4 -C "${BUILD_DIR}/${LATEST_DAY_NAME}"
           
-          echo "Deployment complete!"
+          # Run the built binary and capture output
+          echo "Running the latest binary..."
+          cd "${BUILD_DIR}/${LATEST_DAY_NAME}"
+          
+          # Find all executable files in the directory
+          EXECUTABLES=$(find . -type f -executable -not -path "*/\.*" | sort)
+          
+          # Create logs directory if it doesn't exist
+          LOGS_DIR="${REPO_DIR}/logs"
+          mkdir -p "${LOGS_DIR}"
+          
+          # Run each executable and capture output
+          for EXEC in $EXECUTABLES; do
+            EXEC_NAME=$(basename "${EXEC}")
+            echo "Running ${EXEC_NAME}..."
+            LOG_FILE="${LOGS_DIR}/${LATEST_DAY_NAME}_${EXEC_NAME}.log"
+            
+            # Run the executable and capture both stdout and stderr
+            ${EXEC} > "${LOG_FILE}" 2>&1
+            
+            # Print the first few lines of output
+            echo "Output preview (see ${LOG_FILE} for full output):"
+            head -n 20 "${LOG_FILE}"
+            echo ""
+          done
+          
+          echo "Deployment complete! All binaries have been built and run."
+          echo "Logs are available in ${LOGS_DIR}"
           EOL
           
           # Copy and execute the deployment script on the Jetson Nano
