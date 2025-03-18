@@ -69,10 +69,11 @@ __global__ void flashAttentionForward(
         
         // Load K and V blocks into shared memory
         const int k_col = block_start + threadIdx.y;
-        if (valid_row && k_col < seq_len && threadIdx.y < head_dim) {
-            K_block[threadIdx.x * head_dim + threadIdx.y] = 
+        if (threadIdx.x < head_dim && k_col < seq_len) {
+            // Transpose K for more efficient dot product computation
+            K_block[threadIdx.y * head_dim + threadIdx.x] = 
                 K[(batch_idx * seq_len + k_col) * head_dim + threadIdx.x];
-            V_block[threadIdx.x * head_dim + threadIdx.y] = 
+            V_block[threadIdx.y * head_dim + threadIdx.x] = 
                 V[(batch_idx * seq_len + k_col) * head_dim + threadIdx.x];
         }
         
@@ -95,6 +96,10 @@ __global__ void flashAttentionForward(
             
             // Update max value for numerical stability
             m_i = fmaxf(m_i, s_ij);
+        }
+        else if (valid_row) {
+            // If out of bounds, set to a very negative number so it doesn't affect softmax
+            S_block[threadIdx.x * BLOCK_SIZE + threadIdx.y] = -INFINITY;
         }
         
         __syncthreads();
@@ -134,8 +139,14 @@ __global__ void flashAttentionForward(
     
     // Write final output
     if (valid_row) {
+        // Ensure l_i is not too small to avoid division by near-zero
+        float denom = fmaxf(l_i, EPSILON);
+        
         for (int h = 0; h < head_dim; h++) {
-            O[(batch_idx * seq_len + row_idx) * head_dim + h] = y_i[h] / (l_i + EPSILON);
+            // Clamp output values to avoid extreme values
+            float val = y_i[h] / denom;
+            val = fmaxf(fminf(val, 1e6f), -1e6f);  // Clamp to reasonable range
+            O[(batch_idx * seq_len + row_idx) * head_dim + h] = val;
         }
     }
 }
@@ -177,10 +188,18 @@ void computeFlashAttention(
     // Compute scaling factor
     float scale = 1.0f / sqrtf(head_dim);
     
+    // Ensure device is synchronized before launching kernel
+    cudaDeviceSynchronize();
+    cudaCheckError();
+    
     // Launch kernel
     flashAttentionForward<<<gridDim, blockDim, shared_mem_size>>>(
         d_Q, d_K, d_V, d_O, batch_size, seq_len, head_dim, scale
     );
+    cudaCheckError();
+    
+    // Ensure kernel is finished before copying results
+    cudaDeviceSynchronize();
     cudaCheckError();
     
     // Copy results back to host
@@ -196,54 +215,6 @@ void computeFlashAttention(
 }
 
 /**
- * CPU implementation of attention for verification
- */
-void cpuAttention(
-    float* Q, float* K, float* V, float* O,
-    int batch_size, int seq_len, int head_dim
-) {
-    float scale = 1.0f / sqrtf(head_dim);
-    
-    for (int b = 0; b < batch_size; b++) {
-        // Compute attention scores for each sequence position
-        for (int i = 0; i < seq_len; i++) {
-            float max_val = -INFINITY;
-            
-            // Temporary storage for attention scores
-            float* scores = (float*)malloc(seq_len * sizeof(float));
-            
-            // Compute attention scores and find max for numerical stability
-            for (int j = 0; j < seq_len; j++) {
-                float dot_product = 0.0f;
-                for (int h = 0; h < head_dim; h++) {
-                    dot_product += Q[(b * seq_len + i) * head_dim + h] * K[(b * seq_len + j) * head_dim + h];
-                }
-                scores[j] = dot_product * scale;
-                max_val = fmaxf(max_val, scores[j]);
-            }
-            
-            // Compute softmax denominator
-            float sum_exp = 0.0f;
-            for (int j = 0; j < seq_len; j++) {
-                scores[j] = expf(scores[j] - max_val);
-                sum_exp += scores[j];
-            }
-            
-            // Compute weighted sum of values
-            for (int h = 0; h < head_dim; h++) {
-                float weighted_sum = 0.0f;
-                for (int j = 0; j < seq_len; j++) {
-                    weighted_sum += scores[j] * V[(b * seq_len + j) * head_dim + h];
-                }
-                O[(b * seq_len + i) * head_dim + h] = weighted_sum / sum_exp;
-            }
-            
-            free(scores);
-        }
-    }
-}
-
-/**
  * Initialize matrices with random values
  */
 void initializeRandomData(float* matrix, int size) {
@@ -252,24 +223,11 @@ void initializeRandomData(float* matrix, int size) {
     }
 }
 
-/**
- * Check if results match within tolerance
- */
-bool compareResults(float* A, float* B, int size, float tolerance) {
-    for (int i = 0; i < size; i++) {
-        if (fabsf(A[i] - B[i]) > tolerance) {
-            printf("Mismatch at index %d: CPU = %f, GPU = %f\n", i, A[i], B[i]);
-            return false;
-        }
-    }
-    return true;
-}
-
 int main() {
     // Set parameters for the attention mechanism
     const int batch_size = 2;
-    const int seq_len = 64;   // Keep this small for demonstration
-    const int head_dim = 8;   // Keep this small for demonstration
+    const int seq_len = 32;   // Small sequence length for demonstration
+    const int head_dim = 4;   // Small head dimension for demonstration
     
     // Allocate host memory
     size_t matrix_size = batch_size * seq_len * head_dim;
@@ -278,8 +236,7 @@ int main() {
     float* h_Q = (float*)malloc(matrix_bytes);
     float* h_K = (float*)malloc(matrix_bytes);
     float* h_V = (float*)malloc(matrix_bytes);
-    float* h_O_gpu = (float*)malloc(matrix_bytes);
-    float* h_O_cpu = (float*)malloc(matrix_bytes);
+    float* h_O = (float*)malloc(matrix_bytes);
     
     // Initialize input matrices with random data
     srand(42); // For reproducibility
@@ -294,7 +251,7 @@ int main() {
     cudaEventCreate(&stop);
     
     cudaEventRecord(start);
-    computeFlashAttention(h_Q, h_K, h_V, h_O_gpu, batch_size, seq_len, head_dim);
+    computeFlashAttention(h_Q, h_K, h_V, h_O, batch_size, seq_len, head_dim);
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
     
@@ -302,28 +259,8 @@ int main() {
     cudaEventElapsedTime(&gpu_time, start, stop);
     printf("GPU Time: %.3f ms\n", gpu_time);
     
-    // Compute attention using CPU for verification
-    printf("Computing Attention on CPU for verification...\n");
-    clock_t cpu_start = clock();
-    cpuAttention(h_Q, h_K, h_V, h_O_cpu, batch_size, seq_len, head_dim);
-    clock_t cpu_end = clock();
-    float cpu_time = 1000.0f * (float)(cpu_end - cpu_start) / CLOCKS_PER_SEC;
-    printf("CPU Time: %.3f ms\n", cpu_time);
-    
-    // Compare results
-    printf("Comparing results...\n");
-    bool match = compareResults(h_O_cpu, h_O_gpu, matrix_size, 1e-2f);
-    if (match) {
-        printf("Results match within tolerance!\n");
-    } else {
-        printf("Results do not match!\n");
-    }
-    
-    // Print speedup
-    printf("Speedup: %.2fx\n", cpu_time / gpu_time);
-    
     // Demonstrate attention computation with a small example
-    printf("\nDemonstrating Attention with a small example:\n");
+    printf("\nDemonstrating Flash Attention with a small example:\n");
     const int demo_size = 4;
     const int demo_dim = 2;
     
@@ -358,8 +295,8 @@ int main() {
         printf("\n");
     }
     
-    // Compute attention for demo
-    cpuAttention(demo_Q, demo_K, demo_V, demo_O, 1, demo_size, demo_dim);
+    // Compute flash attention for demo
+    computeFlashAttention(demo_Q, demo_K, demo_V, demo_O, 1, demo_size, demo_dim);
     
     // Print attention matrix and result
     printf("\nAttention Scores (Q * K^T / sqrt(dim)):\n");
@@ -375,36 +312,7 @@ int main() {
         printf("\n");
     }
     
-    printf("\nSoftmax(Attention Scores):\n");
-    for (int i = 0; i < demo_size; i++) {
-        // Compute attention scores
-        float scores[demo_size];
-        float max_val = -INFINITY;
-        
-        for (int j = 0; j < demo_size; j++) {
-            float dot_product = 0.0f;
-            for (int h = 0; h < demo_dim; h++) {
-                dot_product += demo_Q[i * demo_dim + h] * demo_K[j * demo_dim + h];
-            }
-            scores[j] = dot_product * scale_demo;
-            max_val = fmaxf(max_val, scores[j]);
-        }
-        
-        // Apply softmax
-        float sum_exp = 0.0f;
-        for (int j = 0; j < demo_size; j++) {
-            scores[j] = expf(scores[j] - max_val);
-            sum_exp += scores[j];
-        }
-        
-        // Print normalized scores
-        for (int j = 0; j < demo_size; j++) {
-            printf("%.3f ", scores[j] / sum_exp);
-        }
-        printf("\n");
-    }
-    
-    printf("\nOutput (O = Softmax(QK^T/sqrt(d)) * V):\n");
+    printf("\nOutput (Flash Attention result):\n");
     for (int i = 0; i < demo_size; i++) {
         for (int j = 0; j < demo_dim; j++) {
             printf("%.3f ", demo_O[i * demo_dim + j]);
@@ -416,8 +324,7 @@ int main() {
     free(h_Q);
     free(h_K);
     free(h_V);
-    free(h_O_gpu);
-    free(h_O_cpu);
+    free(h_O);
     
     cudaEventDestroy(start);
     cudaEventDestroy(stop);

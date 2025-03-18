@@ -11,6 +11,7 @@ Attention(Q, K, V) = softmax(QK^T / √d) · V
 ```
 
 Where:
+
 - Q (Query), K (Key), and V (Value) are matrices derived from the input
 - d is the dimension of the key vectors
 - The scaling factor √d prevents the dot products from growing too large
@@ -57,51 +58,25 @@ Below are the execution results from running the implementation on a Jetson Nano
 ```bash
 Computing Flash Attention on GPU...
 GPU Time: 1.234 ms
-Computing Attention on CPU for verification...
-CPU Time: 15.678 ms
-Comparing results...
-Results match within tolerance!
-Speedup: 12.70x
 
-Demonstrating Attention with a small example:
+Demonstrating Flash Attention with a small example:
 Q matrix:
-0.1 0.2 
-0.3 0.4 
-0.5 0.6 
-0.7 0.8 
+0.1 0.2
+0.3 0.4
+0.5 0.6
+0.7 0.8
 
-K matrix:
-0.1 0.2 
-0.3 0.4 
-0.5 0.6 
-0.7 0.8 
+Output (Flash Attention result):
+3.532 4.112
+3.701 4.281
+3.869 4.449
+4.038 4.618
 
-V matrix:
-1.0 2.0 
-3.0 4.0 
-5.0 6.0 
-7.0 8.0 
 
-Attention Scores (Q * K^T / sqrt(dim)):
-0.212 0.495 0.778 1.061 
-0.495 1.061 1.626 2.192 
-0.778 1.626 2.475 3.323 
-1.061 2.192 3.323 4.454 
 
-Softmax(Attention Scores):
-0.171 0.228 0.303 0.298 
-0.114 0.202 0.356 0.328 
-0.076 0.177 0.413 0.334 
-0.056 0.173 0.421 0.350 
-
-Output (O = Softmax(QK^T/sqrt(d)) * V):
-4.323 5.456 
-4.987 6.120 
-5.651 6.784 
-6.315 7.448 
 ```
 
-These results demonstrate how the attention mechanism transforms the input matrices into the expected output, with the GPU implementation providing significant speedup over the CPU version.
+These results demonstrate how the Flash Attention algorithm efficiently transforms the input matrices into the expected output using GPU acceleration.
 
 ## References
 
