@@ -28,6 +28,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 6   | 2025-03-15 | Matrix Transpose with CPU/GPU Benchmarking | [Link](./day006/) |
 | 7   | 2025-03-16 | 1D & 2D Convolution in CUDA | [Link](./day007/) |
 | 8   | 2025-03-17 | Parallel Prefix Sum - Exclusive Scan | [Link](./day008/) |
+| 9   | 2025-03-18 | Flash Attention Forward Pass | [Link](./day009/) |
 
 ## Rules
 
