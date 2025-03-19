@@ -28,3 +28,8 @@ Thumbs.db
 build/
 bin/
 obj/
+
+# Log files
+*.log
+*.log.*
+logs/
