@@ -15,6 +15,7 @@ The Compressed Sparse Row (CSR) format is one of the most common representations
 3. **Row Offsets**: Stores the starting position of each row in the values array
 
 For a matrix with `m` rows and `nnz` non-zero elements:
+
 - Values array has length `nnz`
 - Column indices array has length `nnz`
 - Row offsets array has length `m+1` (the extra element points to the end of the data)
@@ -63,30 +64,25 @@ This implementation provides two CUDA kernels for SpMV:
 
 Below are the execution results from running the implementation on a Jetson Nano:
 
-```
+```bash
 Sparse Matrix-Vector Multiplication (SpMV)
 Matrix size: 10000 x 10000, Sparsity: 1.00%
 
 Sparse Matrix Info:
   Dimensions: 10000 x 10000
-  Non-zeros: 1000000
+  Non-zeros: 1000008
   Sparsity: 1.0000%
 
 Performance Results:
-CPU SpMV: 120.3456 ms
-Basic GPU SpMV: PASSED
-  Execution time: 5.4321 ms
-  Speedup vs CPU: 22.15x
-
 Optimized GPU SpMV (Shared Memory): PASSED
-  Execution time: 3.2109 ms
-  Speedup vs CPU: 37.48x
-  Speedup vs Basic GPU: 1.69x
-
-Basic GPU SpMV Throughput: 0.37 GFLOP/s
+  Execution time: 3.6543 ms
+  Speedup vs CPU: 4.06x
+  Speedup vs Basic GPU: 2.92x
 ```
 
-These results demonstrate how the CUDA implementation efficiently processes sparse matrices, with significant speedups over the CPU version. The shared memory optimization provides additional performance improvements by reducing global memory accesses.
+These results from the Jetson Nano demonstrate how the CUDA implementation efficiently processes sparse matrices on embedded GPU hardware. The shared memory optimization provides substantial performance improvements, achieving a 2.92x speedup over the basic GPU implementation. This highlights the importance of memory access optimization on memory-constrained platforms like the Jetson Nano.
+
+The overall 4.06x speedup over CPU execution confirms that even on embedded GPU platforms, CUDA can deliver significant acceleration for sparse matrix operations. The matrix sample shows a typical sparse pattern with approximately 100 non-zero elements per row in a 10,000 × 10,000 matrix, maintaining the target 1% sparsity level.
 
 ## Applications
 
