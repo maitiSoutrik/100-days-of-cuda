@@ -13,7 +13,7 @@ add_executable(sparse_matrix_vector_mul sparse_matrix_vector_mul.cu)
 # Set the CUDA architectures
 set_target_properties(sparse_matrix_vector_mul PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
-    CUDA_ARCHITECTURES "5.3" # For Jetson Nano compatibility
+    CUDA_ARCHITECTURES "50;60;70;75" # Compatible with Jetson Nano
 )
 
 # Link against CUDA libraries
