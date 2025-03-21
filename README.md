@@ -30,6 +30,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 8   | 2025-03-17 | Parallel Prefix Sum - Exclusive Scan | [Link](./day008/) |
 | 9   | 2025-03-18 | Flash Attention Forward Pass | [Link](./day009/) |
 | 10  | 2025-03-19 | Sparse Matrix-Vector Multiplication (SpMV) | [Link](./day010/) |
+| 11  | 2025-03-20 | Merge Sort with CUDA | [Link](./day011/) |
 
 ## Rules
 
