@@ -11,10 +11,10 @@ find_package(CUDA REQUIRED)
 # Add executable
 add_executable(merge_sort merge_sort.cu)
 
-# Set CUDA architectures
+# Set CUDA architectures - Jetson Nano has compute capability 5.3
 set_target_properties(merge_sort PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
-    CUDA_ARCHITECTURES "50;52;53;60;61;62;70;72;75;80;86")
+    CUDA_ARCHITECTURES "53")
 
 # Install target
 install(TARGETS merge_sort DESTINATION bin)
