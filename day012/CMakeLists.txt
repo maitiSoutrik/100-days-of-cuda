@@ -12,17 +12,8 @@ find_package(CUDA REQUIRED)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# Add the C file as a separate library to ensure it's compiled correctly
-add_library(bfs_cpu_lib STATIC bfs_cpu.c)
-
-# Make sure the CPU library is compiled with the correct include path
-target_include_directories(bfs_cpu_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
-# Add executable with CUDA files
-add_executable(bfs main.cu bfs_gpu.cu)
-
-# Link the C library to the executable
-target_link_libraries(bfs PRIVATE bfs_cpu_lib)
+# Instead of creating a separate library, compile all source files together
+add_executable(bfs main.cu bfs_gpu.cu bfs_cpu.c)
 
 # Set CUDA architectures - Jetson Nano has compute capability 5.3
 set_target_properties(bfs PROPERTIES
