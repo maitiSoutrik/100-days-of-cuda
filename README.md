@@ -31,6 +31,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 9   | 2025-03-18 | Flash Attention Forward Pass | [Link](./day009/) |
 | 10  | 2025-03-19 | Sparse Matrix-Vector Multiplication (SpMV) | [Link](./day010/) |
 | 11  | 2025-03-20 | Merge Sort with CUDA | [Link](./day011/) |
+| 12  | 2025-03-21 | Breadth-First Search (BFS) with CUDA | [Link](./day012/) |
 
 ## Rules
 
