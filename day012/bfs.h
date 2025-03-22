@@ -1,7 +1,10 @@
 #ifndef BFS_H
 #define BFS_H
 
+#ifdef __CUDACC__
 #include <cuda_runtime.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -12,6 +15,7 @@
 #define AVERAGE_EDGES_PER_VERTEX 8
 #define NUM_VERTICES 1000000  // Reduced for faster testing
 
+#ifdef __CUDACC__
 #define CHECK_CUDA_ERROR(call) \
     { \
         cudaError_t err = call; \
@@ -21,6 +25,7 @@
             exit(EXIT_FAILURE); \
         } \
     }
+#endif
 
 // Function to generate a random graph in CSR format
 void generate_random_graph(int num_vertices, int* num_edges, int** edges, int** dest);
