@@ -15,9 +15,11 @@ jobs:
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.JETSON_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
+          echo "${{ secrets.JETSON_SSH_KEY }}" > ~/.ssh/jetson_ci_key
+          chmod 600 ~/.ssh/jetson_ci_key
           ssh-keyscan -H 192.168.1.184 >> ~/.ssh/known_hosts
+          # Test SSH connection
+          ssh -i ~/.ssh/jetson_ci_key -o StrictHostKeyChecking=no -o BatchMode=yes drboom@192.168.1.184 echo "SSH connection successful" || { echo "SSH connection failed"; exit 1; }
 
       - name: Deploy to Jetson Nano
         run: |
@@ -105,5 +107,5 @@ jobs:
           
           # Copy and execute the deployment script on the Jetson Nano
           chmod +x deploy.sh
-          scp -i ~/.ssh/id_ed25519 deploy.sh drboom@192.168.1.184:~/deploy.sh
-          ssh -i ~/.ssh/id_ed25519 drboom@192.168.1.184 "chmod +x ~/deploy.sh && ~/deploy.sh && rm ~/deploy.sh"
+          scp -i ~/.ssh/jetson_ci_key deploy.sh drboom@192.168.1.184:~/deploy.sh
+          ssh -i ~/.ssh/jetson_ci_key drboom@192.168.1.184 "chmod +x ~/deploy.sh && ~/deploy.sh && rm ~/deploy.sh"
