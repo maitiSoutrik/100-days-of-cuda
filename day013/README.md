@@ -64,11 +64,40 @@ cmake --build build
 ./build/day013/bfs_optimized
 ```
 
+## Performance Results
+
+The implementation was tested on a Jetson Nano with the following results:
+
+```text
+Generating random graph with 1000000 vertices...
+Graph generated with 7494786 edges
+
+Running optimized GPU BFS with shared memory...
+Optimized GPU BFS completed in 0.248296 seconds
+
+Running CPU BFS...
+CPU BFS completed in 0.367740 seconds
+
+Verifying results...
+Verification successful! GPU and CPU results match.
+Speedup: 1.48x
+
+BFS Statistics:
+  Maximum BFS level: 10
+  Unreachable vertices: 554 (0.06%)
+```
+
 ## Performance Analysis
 
-After running the implementation, we'll analyze:
+1. **GPU Outperformed CPU**: The GPU implementation with shared memory optimization was approximately 1.48x faster than the CPU implementation.
 
-1. The speedup compared to the CPU implementation
-2. The improvement over the Day 12 GPU implementation
-3. Memory access patterns and their impact on performance
-4. Scalability with increasing graph size
+2. **Improvement Over Day 12**: In the previous implementation (Day 12), the CPU was 25x faster than the GPU. Now, our optimized GPU implementation outperforms the CPU.
+
+3. **Factors Contributing to Improved Performance**:
+
+   - **Shared Memory Usage**: Caching frontier vertices and edge ranges in shared memory reduced global memory access latency.
+   - **Efficient Frontier Management**: Only processing active vertices rather than scanning all vertices at each level.
+   - **Larger Problem Size**: Testing with 1 million vertices (up from 10,000) better utilized GPU parallelism.
+   - **Two-Phase Kernel Execution**: Separating frontier processing and preparation improved efficiency.
+
+4. **Scalability**: The results demonstrate that GPU implementations of graph algorithms can outperform CPU implementations when properly optimized and run on sufficiently large datasets.

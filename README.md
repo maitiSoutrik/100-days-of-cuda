@@ -32,6 +32,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 10  | 2025-03-19 | Sparse Matrix-Vector Multiplication (SpMV) | [Link](./day010/) |
 | 11  | 2025-03-20 | Merge Sort with CUDA | [Link](./day011/) |
 | 12  | 2025-03-21 | Breadth-First Search (BFS) with CUDA | [Link](./day012/) |
+| 13  | 2025-03-22 | Optimized BFS with Shared Memory | [Link](./day013/) |
 
 ## Rules
 
