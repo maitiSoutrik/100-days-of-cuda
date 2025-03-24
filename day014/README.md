@@ -2,6 +2,28 @@
 
 This implementation demonstrates the Fractional Hausdorff Distance (FHD) algorithm applied to grayscale images using CUDA. The FHD is a measure of how similar two sets of points are to each other, commonly used in image processing and computer vision applications.
 
+## Results
+
+The implementation successfully processes grayscale images and produces a transformed output based on the FHD algorithm. The output image (fhd_output.jpg) shows the magnitude of the complex FHD values calculated for each pixel.
+
+### Console Output
+
+```bash
+Loading image: lena_gray.png
+Image dimensions: 512x512
+CUDA grid size: 1024 blocks of 256 threads
+Processed chunk 1 of 1
+FHD processing complete. Output saved as fhd_output.jpg
+```
+
+### Output Image
+
+The processed image using the FHD algorithm is shown below:
+
+![FHD Processed Image](./output/fhd_output.jpg)
+
+This image shows the magnitude of the complex FHD values calculated for each pixel in the input grayscale image.
+
 ## Implementation Details
 
 The implementation processes grayscale images by:
