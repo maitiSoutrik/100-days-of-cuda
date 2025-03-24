@@ -49,6 +49,17 @@ jobs:
           # Create build directory if it doesn't exist
           mkdir -p "${BUILD_DIR}"
           
+          # Ensure image files are copied to the build directory
+          echo "Copying image files to build directory..."
+          find "${REPO_DIR}" -name "*.png" -o -name "*.jpg" | while read img_file; do
+            img_dir=$(dirname "${img_file}")
+            rel_path=$(realpath --relative-to="${REPO_DIR}" "${img_dir}")
+            target_dir="${BUILD_DIR}/${rel_path}"
+            mkdir -p "${target_dir}"
+            cp "${img_file}" "${target_dir}/"
+            echo "Copied ${img_file} to ${target_dir}/"
+          done
+          
           # Build the latest day's code
           echo "Building latest code..."
           cd "${BUILD_DIR}"

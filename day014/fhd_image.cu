@@ -1,12 +1,3 @@
-/*
- * Fractional Hausdorff Distance (FHD) implementation for grayscale images
- * Based on: https://github.com/a-hamdi/GPU/blob/main/day%2014/cmpFHd_real_image.cu
- * 
- * Build with: 
- * nvcc fhd_image.cu -o fhd_image `pkg-config --cflags --libs opencv4`
- * or use CMake
- */
-
 #include <cuda_runtime.h>
 #include <opencv2/opencv.hpp>
 #include <iostream>
@@ -70,13 +61,43 @@ int main(int argc, char** argv) {
         imagePath = argv[1];
     }
     
-    // Load an image using OpenCV
+    Mat image;
+    
+    // Try to load the image using OpenCV
     cout << "Loading image: " << imagePath << endl;
-    Mat image = imread(imagePath, IMREAD_GRAYSCALE);
+    image = imread(imagePath, IMREAD_GRAYSCALE);
+    
+    // If image loading fails, create a synthetic test image
     if (image.empty()) {
-        cerr << "Error: Could not open the image!" << endl;
-        cerr << "Please provide a valid grayscale image path." << endl;
-        return -1;
+        cout << "Warning: Could not open the image file: " << imagePath << endl;
+        cout << "Creating a synthetic test image instead..." << endl;
+        
+        // Create a 512x512 synthetic test image with a gradient pattern
+        int width = 512;
+        int height = 512;
+        image = Mat(height, width, CV_8UC1);
+        
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                // Create a pattern (gradient + circle)
+                float dx = j - width/2;
+                float dy = i - height/2;
+                float distance = sqrt(dx*dx + dy*dy);
+                
+                // Combine gradient and radial pattern
+                uchar value = (uchar)(
+                    ((i * 255) / height) * 0.5 + // Horizontal gradient
+                    ((j * 255) / width) * 0.3 +  // Vertical gradient
+                    (sin(distance * 0.1) + 1) * 30 // Radial pattern
+                );
+                
+                image.at<uchar>(i, j) = value;
+            }
+        }
+        
+        // Save the synthetic image for reference
+        imwrite("synthetic_test.png", image);
+        cout << "Synthetic test image created and saved as synthetic_test.png" << endl;
     }
 
     // Print image dimensions
