@@ -34,6 +34,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 12  | 2025-03-21 | Breadth-First Search (BFS) with CUDA | [Link](./day012/) |
 | 13  | 2025-03-22 | Optimized BFS with Shared Memory | [Link](./day013/) |
 | 14  | 2025-03-23 | Fractional Hausdorff Distance (FHD) for Image Processing | [Link](./day014/) |
+| 15  | 2025-03-24 | Convolutional Neural Network (CNN) in CUDA | [Link](./day015/) |
 
 ## Rules
 
