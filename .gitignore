@@ -35,5 +35,3 @@ obj/
 logs/
 
 # CI/CD specific files
-# com.github.actions.runner.plist
-# start-runner.fish
