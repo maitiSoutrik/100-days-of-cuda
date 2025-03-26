@@ -12,49 +12,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup SSH key and test connection
+      - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.JETSON_SSH_KEY }}" > ~/.ssh/jetson_ci_key
           chmod 600 ~/.ssh/jetson_ci_key
+          ssh-keyscan -H 192.168.1.184 >> ~/.ssh/known_hosts
+          # Test SSH connection
+          ssh -i ~/.ssh/jetson_ci_key -o StrictHostKeyChecking=no -o BatchMode=yes drboom@192.168.1.184 echo "SSH connection successful" || { echo "SSH connection failed"; exit 1; }
           
-          # Network diagnostics
-          echo "Running network diagnostics..."
-          ping -c 4 192.168.1.184 || echo "Ping failed but continuing..."
-          
-          # Add host key with increased timeout
-          echo "Adding host key..."
-          ssh-keyscan -H -T 10 192.168.1.184 >> ~/.ssh/known_hosts || echo "ssh-keyscan failed but continuing..."
-          
-          # Test SSH connection with retries
-          echo "Testing SSH connection with retries..."
-          max_retries=5
-          retry_count=0
-          connected=false
-          
-          while [ $retry_count -lt $max_retries ] && [ "$connected" = false ]; do
-            echo "SSH connection attempt $((retry_count+1))/$max_retries"
-            if ssh -v -i ~/.ssh/jetson_ci_key -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o BatchMode=yes drboom@192.168.1.184 echo "SSH connection successful"; then
-              connected=true
-              echo "SSH connection established successfully!"
-            else
-              echo "SSH connection attempt failed. Retrying in 10 seconds..."
-              sleep 10
-              retry_count=$((retry_count+1))
-            fi
-          done
-          
-          if [ "$connected" = false ]; then
-            echo "Failed to establish SSH connection after $max_retries attempts."
-            exit 1
-          fi
+
 
       - name: Deploy to Jetson Nano
         run: |
-          # Create a deployment script with improved error handling
+          # Create a deployment script
           cat > deploy.sh << 'EOL'
           #!/bin/bash
-          # Exit on error, but add retry logic for network operations
           set -e
 
           # Define variables
@@ -78,33 +51,15 @@ jobs:
           # Create build directory if it doesn't exist
           mkdir -p "${BUILD_DIR}"
           
-          # Ensure image files are copied to the build directory
-          echo "Copying image files to build directory..."
-          find "${REPO_DIR}" -name "*.png" -o -name "*.jpg" | while read img_file; do
-            img_dir=$(dirname "${img_file}")
-            rel_path=$(realpath --relative-to="${REPO_DIR}" "${img_dir}")
-            target_dir="${BUILD_DIR}/${rel_path}"
-            mkdir -p "${target_dir}"
-            cp "${img_file}" "${target_dir}/"
-            echo "Copied ${img_file} to ${target_dir}/"
-          done
-          
-          # Build the latest day's code
-          echo "Building latest code..."
+          # Build the code
+          echo "Building code..."
           cd "${BUILD_DIR}"
           cmake ..
+          cmake --build .
           
           # Create logs directory if it doesn't exist
           LOGS_DIR="${REPO_DIR}/logs"
           mkdir -p "${LOGS_DIR}"
-          
-          # Build and run all days' code
-          echo "Building and running all days..."
-          
-          # First, build all projects
-          echo "Building all projects..."
-          cd "${BUILD_DIR}"
-          cmake --build .
           
           # Get all day directories
           DAY_DIRS=$(ls -d ${REPO_DIR}/day* | sort -V)
@@ -133,7 +88,7 @@ jobs:
                 
                 # Print the first few lines of output
                 echo "Output preview (see ${LOG_FILE} for full output):"
-                head -n 20 "${LOG_FILE}"
+                head -n 10 "${LOG_FILE}"
                 echo ""
               done
             else
@@ -145,37 +100,7 @@ jobs:
           echo "Logs are available in ${LOGS_DIR}"
           EOL
           
-          # Copy and execute the deployment script on the Jetson Nano with retry logic
+          # Copy and execute the deployment script on the Jetson Nano
           chmod +x deploy.sh
-          
-          # Function to retry commands
-          retry_command() {
-            local cmd="$1"
-            local max_attempts=5
-            local attempt=1
-            local delay=10
-            
-            while [ $attempt -le $max_attempts ]; do
-              echo "Attempt $attempt/$max_attempts: $cmd"
-              if eval $cmd; then
-                echo "Command succeeded!"
-                return 0
-              else
-                echo "Command failed. Retrying in $delay seconds..."
-                sleep $delay
-                attempt=$((attempt+1))
-                delay=$((delay+5))
-              fi
-            done
-            
-            echo "Command failed after $max_attempts attempts."
-            return 1
-          }
-          
-          # Copy deployment script with retry
-          echo "Copying deployment script to Jetson Nano..."
-          retry_command "scp -o ConnectTimeout=20 -i ~/.ssh/jetson_ci_key deploy.sh drboom@192.168.1.184:~/deploy.sh"
-          
-          # Execute deployment script with retry
-          echo "Executing deployment script on Jetson Nano..."
-          retry_command "ssh -o ConnectTimeout=20 -i ~/.ssh/jetson_ci_key drboom@192.168.1.184 \"chmod +x ~/deploy.sh && ~/deploy.sh && rm ~/deploy.sh\""
+          scp -i ~/.ssh/jetson_ci_key deploy.sh drboom@192.168.1.184:~/deploy.sh
+          ssh -i ~/.ssh/jetson_ci_key drboom@192.168.1.184 "chmod +x ~/deploy.sh && ~/deploy.sh && rm ~/deploy.sh"
