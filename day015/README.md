@@ -42,3 +42,23 @@ Run the executable:
 ```bash
 ./build/cnn
 ```
+
+## Execution Output
+
+When running the CNN implementation, you should see output similar to the following:
+
+```text
+Performing forward pass...
+
+Performing backward pass...
+
+CNN Architecture Summary:
+Input: 28 x 28 x 1
+Convolution: 16 filters of size 3 x 3, stride 1, padding 1
+After Convolution: 28 x 28 x 16
+After ReLU: 28 x 28 x 16
+Pooling: size 2 x 2, stride 2
+After Pooling: 14 x 14 x 16
+
+CNN implementation completed successfully!
+```
