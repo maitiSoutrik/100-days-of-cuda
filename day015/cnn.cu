@@ -245,6 +245,13 @@ __global__ void convolutionBackpropInputKernel(
 }
 
 // Convolution backpropagation kernel for filter gradients
+__global__ void multiplyGradientsKernel(float *a, float *b, float *c, int size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        c[idx] = a[idx] * b[idx];
+    }
+}
+
 __global__ void convolutionBackpropFilterKernel(
     float *input, float *outputGradient, float *filterGradient,
     int inputHeight, int inputWidth, int inputChannels,
@@ -437,14 +444,6 @@ int main() {
     // Element-wise multiplication of gradients
     dim3 elementWiseBlock(256);
     dim3 elementWiseGrid((OUTPUT_HEIGHT * OUTPUT_WIDTH * NUM_FILTERS + elementWiseBlock.x - 1) / elementWiseBlock.x);
-    
-    // Multiply ReLU derivative with incoming gradient
-    __global__ void multiplyGradientsKernel(float *a, float *b, float *c, int size) {
-        int idx = blockIdx.x * blockDim.x + threadIdx.x;
-        if (idx < size) {
-            c[idx] = a[idx] * b[idx];
-        }
-    }
     
     multiplyGradientsKernel<<<elementWiseGrid, elementWiseBlock>>>(
         d_relu_gradient, d_conv_gradient, d_conv_gradient, OUTPUT_HEIGHT * OUTPUT_WIDTH * NUM_FILTERS
