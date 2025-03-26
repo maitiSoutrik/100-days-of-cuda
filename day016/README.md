@@ -50,6 +50,37 @@ The code measures and compares performance between the two kernel implementation
 
 The performance improvement with shared memory is calculated and reported at the end of the simulation.
 
+### Jetson Nano Results
+
+When run on the Jetson Nano, the simulation produced the following results:
+
+```text
+CUDA Particle System Simulation
+Number of particles: 65536
+Running simulation for 100 iterations...
+Iteration 0 completed in 1287.712 ms
+Iteration 10 completed in 1183.604 ms
+Iteration 20 completed in 1183.364 ms
+Iteration 30 completed in 1183.028 ms
+Iteration 40 completed in 1183.328 ms
+Iteration 50 completed in 1182.980 ms
+Iteration 60 completed in 1183.000 ms
+Iteration 70 completed in 1183.433 ms
+Iteration 80 completed in 1183.531 ms
+Iteration 90 completed in 1182.281 ms
+
+Simulation complete!
+Average time per iteration: 1096.903 ms
+Particles processed per second: 0.06 million
+
+Comparing kernel performance...
+Regular kernel average time: 1183.183 ms
+Shared memory kernel average time: 1008.163 ms
+Performance improvement with shared memory: 14.79%
+```
+
+The shared memory optimization resulted in a 14.79% performance improvement on the Jetson Nano, demonstrating the effectiveness of using shared memory to reduce global memory access latency.
+
 ## Building and Running
 
 ```bash
