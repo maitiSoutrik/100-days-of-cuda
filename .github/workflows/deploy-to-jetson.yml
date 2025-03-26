@@ -51,15 +51,22 @@ jobs:
           # Create build directory if it doesn't exist
           mkdir -p "${BUILD_DIR}"
           
-          # Build the code
-          echo "Building code..."
+          # Build the latest day's code
+          echo "Building latest code..."
           cd "${BUILD_DIR}"
           cmake ..
-          cmake --build .
           
           # Create logs directory if it doesn't exist
           LOGS_DIR="${REPO_DIR}/logs"
           mkdir -p "${LOGS_DIR}"
+          
+          # Build and run all days' code
+          echo "Building and running all days..."
+          
+          # First, build all projects
+          echo "Building all projects..."
+          cd "${BUILD_DIR}"
+          cmake --build .
           
           # Get all day directories
           DAY_DIRS=$(ls -d ${REPO_DIR}/day* | sort -V)
@@ -88,7 +95,7 @@ jobs:
                 
                 # Print the first few lines of output
                 echo "Output preview (see ${LOG_FILE} for full output):"
-                head -n 10 "${LOG_FILE}"
+                head -n 20 "${LOG_FILE}"
                 echo ""
               done
             else
