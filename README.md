@@ -36,6 +36,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 14  | 2025-03-23 | Fractional Hausdorff Distance (FHD) for Image Processing | [Link](./day014/) |
 | 15  | 2025-03-24 | Convolutional Neural Network (CNN) in CUDA | [Link](./day015/) |
 | 16  | 2025-03-25 | Parallel Particle System Simulation | [Link](./day016/) |
+| 17  | 2025-03-26 | Naive Bayes Classifier Training | [Link](./day017/) |
 
 ## Rules
 
