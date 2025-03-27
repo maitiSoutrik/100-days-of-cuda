@@ -145,21 +145,3 @@ int main() {
 
     return 0;
 }
-
-    for (int i = 0; i < num_samples; i++) {
-        if (labels[i] == class_idx) {
-            float val = features[i * num_features + feature_idx];
-            sum += val;
-            sq_sum += val * val;
-            count++;
-        }
-    }
-
-    if (count > 0) {
-        float mean = sum / count;
-        class_means[class_idx * num_features + feature_idx] = mean;
-        class_variances[class_idx * num_features + feature_idx] = 
-            (sq_sum - (sum * sum) / count) / (count - 1);
-        class_counts[class_idx] = count;
-    }
-}
