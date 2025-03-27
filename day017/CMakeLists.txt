@@ -3,6 +3,8 @@ project(day017_naive_bayes LANGUAGES CXX CUDA)
 
 find_package(CUDA REQUIRED)
 
+set(CUDA_ARCHITECTURES "53")
+
 add_executable(naive_bayes
   naive_bayes_kernel.cu
   main.cpp
