@@ -16,7 +16,7 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.JETSON_SSH_KEY }}" > ~/.ssh/jetson_ci_key
-          chmod 600 ~/.ssh/jetson_ci_key
+          chmod 600 ~/.ssh/jetson_ci_key_nopass
           ssh-keyscan -H 192.168.1.184 >> ~/.ssh/known_hosts
           # Test SSH connection
           ssh -i ~/.ssh/jetson_ci_key -o StrictHostKeyChecking=no -o BatchMode=yes drboom@192.168.1.184 echo "SSH connection successful" || { echo "SSH connection failed"; exit 1; }
@@ -93,6 +93,9 @@ jobs:
                 # Run the executable and capture both stdout and stderr
                 ${EXEC} > "${LOG_FILE}" 2>&1
                 
+                # Add a 5 second sleep
+                sleep 15
+                
                 # Print the first few lines of output
                 echo "Output preview (see ${LOG_FILE} for full output):"
                 head -n 20 "${LOG_FILE}"
@@ -109,5 +112,5 @@ jobs:
           
           # Copy and execute the deployment script on the Jetson Nano
           chmod +x deploy.sh
-          scp -i ~/.ssh/jetson_ci_key deploy.sh drboom@192.168.1.184:~/deploy.sh
-          ssh -i ~/.ssh/jetson_ci_key drboom@192.168.1.184 "chmod +x ~/deploy.sh && ~/deploy.sh && rm ~/deploy.sh"
+          scp -i ~/.ssh/jetson_ci_key_nopass deploy.sh drboom@192.168.1.184:~/deploy.sh
+          ssh -i ~/.ssh/jetson_ci_key_nopass drboom@192.168.1.184 "chmod +x ~/deploy.sh && ~/deploy.sh && rm ~/deploy.sh"
