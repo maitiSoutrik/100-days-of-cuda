@@ -23,7 +23,7 @@ This example demonstrates how to perform matrix multiplication using the CUBLAS 
 - For large matrices, the performance gain can be significant (10-100x faster than CPU)
 - The implementation handles matrix layout differences between C/C++ and CUBLAS
 
-## Sample Output
+## Execution Results on Jetson Nano
 
 ```cuda
 Matrix A (2x3):
@@ -39,7 +39,11 @@ Matrix C = A × B (2x2):
 58.00 64.00 
 139.00 154.00 
 
-CPU Execution Time: X.XXX ms
-GPU Execution Time: X.XXX ms
-Speedup: X.XX
+CPU Execution Time: 0.001 ms
+GPU Execution Time: 27.283 ms
+Speedup: 0.00
+
+Results verified: GPU and CPU calculations match!
 ```
+
+**Note:** For this small matrix size, the GPU execution time is longer than CPU execution time due to the overhead of data transfer and kernel launch. For larger matrices, the GPU would show significant speedup.
