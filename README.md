@@ -38,6 +38,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 16  | 2025-03-25 | Parallel Particle System Simulation | [Link](./day016/) |
 | 17  | 2025-03-26 | Naive Bayes Classifier Training | [Link](./day017/) |
 | 18  | 2025-03-27 | Matrix Multiplication using CUBLAS | [Link](./day018/) |
+| 19  | 2025-03-29 | Fast Fourier Transform (FFT) Implementation | [Link](./day019/) |
 
 ## Rules
 
