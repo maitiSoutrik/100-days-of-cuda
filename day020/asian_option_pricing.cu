@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
     }
     
     // Number of Monte Carlo simulations
-    int numSimulations[] = {10000, 100000, 1000000, 10000000};
+    int numSimulations[] = {10000, 100000, 1000000};
     
     printf("Asian Option Parameters:\n");
     printf("  Initial Price (S0): %.2f\n", option.S0);
@@ -140,7 +140,7 @@ int main(int argc, char **argv) {
     printf("\nMonte Carlo Simulation Results:\n");
     printf("%-12s %-15s %-15s\n", "Simulations", "Option Price", "Execution Time (ms)");
     
-    for (int simIdx = 0; simIdx < 4; simIdx++) {
+    for (int simIdx = 0; simIdx < 3; simIdx++) {
         int paths = numSimulations[simIdx];
         
         // Allocate memory for random states and results

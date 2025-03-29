@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
     }
     
     // Number of Monte Carlo simulations
-    int numSimulations[] = {10000, 100000, 1000000, 10000000};
+    int numSimulations[] = {10000, 100000, 1000000};
     
     // Calculate the analytical solution using Black-Scholes formula
     float analyticalPrice = blackScholesFormula(option);
@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
     printf("Monte Carlo Simulation Results:\n");
     printf("%-12s %-15s %-15s %-15s\n", "Simulations", "Option Price", "Abs Error", "Execution Time (ms)");
     
-    for (int simIdx = 0; simIdx < 4; simIdx++) {
+    for (int simIdx = 0; simIdx < 3; simIdx++) {
         int paths = numSimulations[simIdx];
         
         // Allocate memory for random states and results
