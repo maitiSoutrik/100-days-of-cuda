@@ -45,16 +45,20 @@ This project implements a custom Fast Fourier Transform (FFT) algorithm using CU
 
 ## Performance Analysis
 
-The performance of the custom FFT implementation is compared with cuFFT for various input sizes. As expected, cuFFT is significantly faster due to its highly optimized implementation that leverages various hardware-specific optimizations.
+The performance of the custom FFT implementation is compared with cuFFT for various input sizes. The results show interesting performance characteristics:
+
+1. For the smallest size (256), our custom implementation is actually faster than cuFFT, likely due to the overhead of initializing the cuFFT library.
+2. For larger sizes (1024, 4096, 16384), cuFFT becomes significantly faster, demonstrating the effectiveness of its highly optimized implementation.
+3. The speedup of cuFFT over our custom implementation increases with the size of the input, reaching over 229x for the largest size tested.
 
 ### Performance Comparison on Jetson Nano
 
 | FFT Size | Custom FFT (ms) | cuFFT (ms) | Speedup (cuFFT vs Custom) |
 |----------|----------------|------------|---------------------------|
-| 256      | 0.842          | 0.124      | 6.79x                     |
-| 1024     | 3.651          | 0.187      | 19.52x                    |
-| 4096     | 16.327         | 0.412      | 39.63x                    |
-| 16384    | 74.218         | 1.853      | 40.05x                    |
+| 256      | 109.241        | 1818.443   | 0.06x                     |
+| 1024     | 45.527         | 1.441      | 31.59x                    |
+| 4096     | 172.322        | 1.520      | 113.38x                   |
+| 16384    | 427.949        | 1.862      | 229.80x                   |
 
 *Note: Actual performance may vary based on the specific Jetson Nano configuration.*
 
