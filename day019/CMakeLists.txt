@@ -27,24 +27,24 @@ target_link_libraries(fft_comparison
 )
 
 # If OpenCV is found, build the visualization executable
-if(OpenCV_FOUND)
-    include_directories(${OpenCV_INCLUDE_DIRS})
+# if(OpenCV_FOUND)
+#     include_directories(${OpenCV_INCLUDE_DIRS})
     
-    add_executable(fft_visualization
-        fft_visualization.cu
-    )
+#     add_executable(fft_visualization
+#         fft_visualization.cu
+#     )
     
-    target_link_libraries(fft_visualization
-        ${CUDA_LIBRARIES}
-        ${CUDA_CUFFT_LIBRARIES}
-        ${OpenCV_LIBS}
-        m
-    )
+#     target_link_libraries(fft_visualization
+#         ${CUDA_LIBRARIES}
+#         ${CUDA_CUFFT_LIBRARIES}
+#         ${OpenCV_LIBS}
+#         m
+#     )
     
-    message(STATUS "OpenCV found, building visualization executable")
-else()
-    message(STATUS "OpenCV not found, skipping visualization executable")
-endif()
+#     message(STATUS "OpenCV found, building visualization executable")
+# else()
+#     message(STATUS "OpenCV not found, skipping visualization executable")
+# endif()
 
 # Set C++ standard
 set_target_properties(fft_comparison PROPERTIES
@@ -53,10 +53,10 @@ set_target_properties(fft_comparison PROPERTIES
     CXX_STANDARD_REQUIRED ON
 )
 
-if(OpenCV_FOUND)
-    set_target_properties(fft_visualization PROPERTIES
-        CUDA_SEPARABLE_COMPILATION ON
-        CXX_STANDARD 14
-        CXX_STANDARD_REQUIRED ON
-    )
-endif()
+# if(OpenCV_FOUND)
+#     set_target_properties(fft_visualization PROPERTIES
+#         CUDA_SEPARABLE_COMPILATION ON
+#         CXX_STANDARD 14
+#         CXX_STANDARD_REQUIRED ON
+#     )
+# endif()
