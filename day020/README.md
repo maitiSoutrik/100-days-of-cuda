@@ -40,6 +40,45 @@ The code includes:
 - Shared memory usage for efficient reduction operations
 - Comparison of execution times as the number of simulations increases
 
+### Performance Results on Jetson Nano
+
+#### European Option Pricing
+```
+Option Parameters:
+  Initial Price (S0): 100.00
+  Strike Price (K): 100.00
+  Risk-free Rate (r): 0.0500
+  Volatility (sigma): 0.2000
+  Time to Maturity (T): 1.00 years
+  Option Type: Call
+
+Analytical Price (Black-Scholes): 10.450577
+
+Monte Carlo Simulation Results:
+Simulations  Option Price    Abs Error       Execution Time (ms)
+10000        10.459779       0.009202        349.24         
+100000       10.419703       0.030873        3472.19        
+1000000      10.469336       0.018759        61443.40       
+```
+
+#### Asian Option Pricing
+```
+Asian Option Parameters:
+  Initial Price (S0): 100.00
+  Strike Price (K): 100.00
+  Risk-free Rate (r): 0.0500
+  Volatility (sigma): 0.2000
+  Time to Maturity (T): 1.00 years
+  Option Type: Call
+  Time Steps: 252
+
+Monte Carlo Simulation Results:
+Simulations  Option Price    Execution Time (ms)
+10000        5.748469        79.26          
+100000       5.755801        254.18         
+1000000      5.754743        51595.44       
+```
+
 ## Usage
 
 ### European Option Pricing
