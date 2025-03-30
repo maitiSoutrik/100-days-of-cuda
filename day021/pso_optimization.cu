@@ -193,9 +193,6 @@ __global__ void updatePersonalBestKernel(
     }
 }
 
-// Custom atomic minimum function for float (forward declaration)
-__device__ void atomicMinFloat(float* address, float val);
-
 // CUDA kernel for finding the global best index
 __global__ void findGlobalBestKernel(
     Particle* particles,
@@ -238,19 +235,6 @@ __global__ void findGlobalBestKernel(
             *globalBestIdx = sharedIndices[0];
         }
     }
-}
-
-// Custom atomic minimum function for float (implementation)
-__device__ void atomicMinFloat(float* address, float val) {
-    int* address_as_int = (int*)address;
-    int old = *address_as_int;
-    int expected;
-    
-    do {
-        expected = old;
-        int new_val = __float_as_int(min(__int_as_float(expected), val));
-        old = atomicCAS(address_as_int, expected, new_val);
-    } while (expected != old);
 }
 
 // CUDA kernel for updating particle positions and velocities
