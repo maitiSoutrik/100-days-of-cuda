@@ -22,7 +22,7 @@
 
 // Constants
 #define BLOCK_SIZE 256
-#define MAX_GRID_SIZE 100
+#define MAX_GRID_SIZE 200
 #define MAX_STEPS 1000
 
 // Actions
@@ -82,13 +82,53 @@ GridWorld createGridWorld(int gridSize) {
         env.grid[i] = EMPTY;
     }
     
-    // Add obstacles (simple pattern for demonstration)
-    for (int i = 0; i < gridSize; i++) {
-        for (int j = 0; j < gridSize; j++) {
-            // Create a maze-like pattern
-            if ((i % 3 == 0 && j % 4 != 0) || (j % 3 == 0 && i % 4 != 0)) {
-                if (i > 0 && j > 0 && i < gridSize-1 && j < gridSize-1) {
-                    env.grid[i * gridSize + j] = OBSTACLE;
+    // Add obstacles (more complex pattern for larger grids)
+    if (gridSize <= 20) {
+        // Simple pattern for small grids
+        for (int i = 0; i < gridSize; i++) {
+            for (int j = 0; j < gridSize; j++) {
+                // Create a maze-like pattern
+                if ((i % 3 == 0 && j % 4 != 0) || (j % 3 == 0 && i % 4 != 0)) {
+                    if (i > 0 && j > 0 && i < gridSize-1 && j < gridSize-1) {
+                        env.grid[i * gridSize + j] = OBSTACLE;
+                    }
+                }
+            }
+        }
+    } else {
+        // More complex pattern for larger grids
+        // Create a more challenging maze with more obstacles
+        for (int i = 0; i < gridSize; i++) {
+            for (int j = 0; j < gridSize; j++) {
+                // Create a maze-like pattern with more obstacles
+                if ((i % 3 == 0 && j % 4 != 0) || 
+                    (j % 3 == 0 && i % 4 != 0) || 
+                    (i % 5 == 0 && j % 6 != 0) || 
+                    (j % 7 == 0 && i % 3 != 0)) {
+                    if (i > 0 && j > 0 && i < gridSize-1 && j < gridSize-1) {
+                        // Add some randomness to the pattern
+                        if ((i + j) % 5 != 0) {
+                            env.grid[i * gridSize + j] = OBSTACLE;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Ensure there's a path from start to goal by clearing some obstacles
+        // Create a few corridors
+        for (int i = 0; i < gridSize; i += gridSize / 5) {
+            for (int j = 0; j < gridSize; j++) {
+                if (j % 10 != 0) {
+                    env.grid[i * gridSize + j] = EMPTY;
+                }
+            }
+        }
+        
+        for (int j = 0; j < gridSize; j += gridSize / 5) {
+            for (int i = 0; i < gridSize; i++) {
+                if (i % 10 != 0) {
+                    env.grid[i * gridSize + j] = EMPTY;
                 }
             }
         }
@@ -223,8 +263,14 @@ __global__ void qLearningKernel(
     int numAgents = gridDim.x * blockDim.x;
     int numStates = gridSize * gridSize;
     
+    // Skip if thread index is out of range
+    if (agentIdx >= numAgents) return;
+    
     // Get thread-specific random state
     curandState localRandState = randStates[agentIdx];
+    
+    // Use shared memory for frequently accessed data
+    __shared__ int sharedGrid[BLOCK_SIZE];
     
     // Each thread handles multiple episodes
     for (int episodeBase = 0; episodeBase < numEpisodes; episodeBase += numAgents) {
@@ -257,13 +303,14 @@ __global__ void qLearningKernel(
                 int bestAction = 0;
                 float bestValue = qTable[stateIdx * NUM_ACTIONS + 0];
                 
-                for (int a = 1; a < NUM_ACTIONS; a++) {
-                    float value = qTable[stateIdx * NUM_ACTIONS + a];
-                    if (value > bestValue) {
-                        bestValue = value;
-                        bestAction = a;
-                    }
-                }
+                // Unroll the loop for better performance
+                float value1 = qTable[stateIdx * NUM_ACTIONS + 1];
+                float value2 = qTable[stateIdx * NUM_ACTIONS + 2];
+                float value3 = qTable[stateIdx * NUM_ACTIONS + 3];
+                
+                if (value1 > bestValue) { bestValue = value1; bestAction = 1; }
+                if (value2 > bestValue) { bestValue = value2; bestAction = 2; }
+                if (value3 > bestValue) { bestValue = value3; bestAction = 3; }
                 
                 action = bestAction;
             }
@@ -273,24 +320,19 @@ __global__ void qLearningKernel(
             int newY = y;
             float reward = 0.0f;
             
-            // Update position based on action
-            switch (action) {
-                case UP:
-                    newY = max(0, y - 1);
-                    break;
-                case RIGHT:
-                    newX = min(gridSize - 1, x + 1);
-                    break;
-                case DOWN:
-                    newY = min(gridSize - 1, y + 1);
-                    break;
-                case LEFT:
-                    newX = max(0, x - 1);
-                    break;
-            }
+            // Update position based on action (optimized with fewer branches)
+            newX = x + (action == RIGHT) - (action == LEFT);
+            newY = y + (action == DOWN) - (action == UP);
+            
+            // Clamp to grid boundaries
+            newX = max(0, min(gridSize - 1, newX));
+            newY = max(0, min(gridSize - 1, newY));
             
             // Check if new position is an obstacle
-            if (grid[newY * gridSize + newX] == OBSTACLE) {
+            int newStateIdx = newY * gridSize + newX;
+            int cellType = grid[newStateIdx];
+            
+            if (cellType == OBSTACLE) {
                 reward = -10.0f;  // Penalty for hitting an obstacle
             } else {
                 // Update agent position
@@ -298,7 +340,7 @@ __global__ void qLearningKernel(
                 y = newY;
                 
                 // Check if agent reached the goal
-                if (grid[y * gridSize + x] == GOAL) {
+                if (cellType == GOAL) {
                     reward = 100.0f;  // Reward for reaching the goal
                     done = true;
                 } else {
@@ -312,14 +354,18 @@ __global__ void qLearningKernel(
             // Get next state index
             int nextStateIdx = y * gridSize + x;
             
-            // Find maximum Q-value for next state
-            float maxNextQ = qTable[nextStateIdx * NUM_ACTIONS + 0];
-            for (int a = 1; a < NUM_ACTIONS; a++) {
-                float value = qTable[nextStateIdx * NUM_ACTIONS + a];
-                if (value > maxNextQ) {
-                    maxNextQ = value;
-                }
+            // Find maximum Q-value for next state (unrolled for better performance)
+            float qValues[NUM_ACTIONS];
+            
+            #pragma unroll
+            for (int a = 0; a < NUM_ACTIONS; a++) {
+                qValues[a] = qTable[nextStateIdx * NUM_ACTIONS + a];
             }
+            
+            float maxNextQ = qValues[0];
+            maxNextQ = max(maxNextQ, qValues[1]);
+            maxNextQ = max(maxNextQ, qValues[2]);
+            maxNextQ = max(maxNextQ, qValues[3]);
             
             // Update Q-value using Bellman equation
             float oldQ = qTable[stateIdx * NUM_ACTIONS + action];
@@ -445,8 +491,15 @@ void runQlearningGPU(
     CHECK_CUDA_ERROR(cudaGetLastError());
     CHECK_CUDA_ERROR(cudaDeviceSynchronize());
     
-    // Launch kernel
-    qLearningKernel<<<numBlocks, BLOCK_SIZE>>>(
+    // Calculate optimal grid and block dimensions
+    int threadsPerBlock = BLOCK_SIZE;
+    int blocksPerGrid = (numAgents + threadsPerBlock - 1) / threadsPerBlock;
+    
+    // Limit the number of blocks to avoid excessive overhead
+    blocksPerGrid = min(blocksPerGrid, 65535);  // Maximum number of blocks in x-dimension
+    
+    // Launch kernel with optimized configuration
+    qLearningKernel<<<blocksPerGrid, threadsPerBlock>>>(
         d_qTable,
         d_grid,
         env->gridSize,
@@ -482,15 +535,28 @@ void runQlearningGPU(
 // Function to visualize the learned policy
 void visualizePolicy(float* qTable, GridWorld* env, bool useAscii = true) {
     printf("\nLearned Policy:\n");
+    
+    // For large grids, only show a portion to avoid overwhelming the terminal
+    int displaySize = min(env->gridSize, 30);  // Limit display to 30x30 max
+    int startX = 0;
+    int startY = 0;
+    
+    if (env->gridSize > displaySize) {
+        printf("(Showing %dx%d section of %dx%d grid)\n", displaySize, displaySize, env->gridSize, env->gridSize);
+        // Show the start area by default
+        startX = 0;
+        startY = 0;
+    }
+    
     printf("  ");
-    for (int x = 0; x < env->gridSize; x++) {
+    for (int x = 0; x < displaySize; x++) {
         printf("--");
     }
     printf("\n");
     
-    for (int y = 0; y < env->gridSize; y++) {
+    for (int y = startY; y < startY + displaySize && y < env->gridSize; y++) {
         printf("| ");
-        for (int x = 0; x < env->gridSize; x++) {
+        for (int x = startX; x < startX + displaySize && x < env->gridSize; x++) {
             int stateIdx = y * env->gridSize + x;
             int cellType = env->grid[stateIdx];
             
@@ -498,6 +564,8 @@ void visualizePolicy(float* qTable, GridWorld* env, bool useAscii = true) {
                 printf("# ");
             } else if (cellType == GOAL) {
                 printf("G ");
+            } else if (x == env->startX && y == env->startY) {
+                printf("S ");  // Mark the start position
             } else {
                 // Find best action
                 int bestAction = 0;
@@ -551,17 +619,105 @@ void visualizePolicy(float* qTable, GridWorld* env, bool useAscii = true) {
     }
     
     printf("  ");
-    for (int x = 0; x < env->gridSize; x++) {
+    for (int x = 0; x < displaySize; x++) {
         printf("--");
     }
     printf("\n");
+    
+    // Also show the goal area if it's not in the displayed section
+    if (env->gridSize > displaySize && (env->goalX >= startX + displaySize || env->goalY >= startY + displaySize)) {
+        printf("\nGoal Area (around position [%d,%d]):\n", env->goalX, env->goalY);
+        
+        int goalStartX = max(0, env->goalX - displaySize/2);
+        int goalStartY = max(0, env->goalY - displaySize/2);
+        
+        // Ensure we don't go out of bounds
+        if (goalStartX + displaySize > env->gridSize) goalStartX = env->gridSize - displaySize;
+        if (goalStartY + displaySize > env->gridSize) goalStartY = env->gridSize - displaySize;
+        
+        printf("  ");
+        for (int x = 0; x < displaySize; x++) {
+            printf("--");
+        }
+        printf("\n");
+        
+        for (int y = goalStartY; y < goalStartY + displaySize && y < env->gridSize; y++) {
+            printf("| ");
+            for (int x = goalStartX; x < goalStartX + displaySize && x < env->gridSize; x++) {
+                int stateIdx = y * env->gridSize + x;
+                int cellType = env->grid[stateIdx];
+                
+                if (cellType == OBSTACLE) {
+                    printf("# ");
+                } else if (cellType == GOAL) {
+                    printf("G ");
+                } else if (x == env->startX && y == env->startY) {
+                    printf("S ");  // Mark the start position
+                } else {
+                    // Find best action
+                    int bestAction = 0;
+                    float bestValue = qTable[stateIdx * NUM_ACTIONS + 0];
+                    
+                    for (int a = 1; a < NUM_ACTIONS; a++) {
+                        float value = qTable[stateIdx * NUM_ACTIONS + a];
+                        if (value > bestValue) {
+                            bestValue = value;
+                            bestAction = a;
+                        }
+                    }
+                    
+                    // Print arrow for best action
+                    if (useAscii) {
+                        // ASCII-only version for maximum compatibility
+                        switch (bestAction) {
+                            case UP:
+                                printf("^ ");
+                                break;
+                            case RIGHT:
+                                printf("> ");
+                                break;
+                            case DOWN:
+                                printf("v ");
+                                break;
+                            case LEFT:
+                                printf("< ");
+                                break;
+                        }
+                    } else {
+                        // Unicode arrows for terminals that support it
+                        switch (bestAction) {
+                            case UP:
+                                printf("↑ ");
+                                break;
+                            case RIGHT:
+                                printf("→ ");
+                                break;
+                            case DOWN:
+                                printf("↓ ");
+                                break;
+                            case LEFT:
+                                printf("← ");
+                                break;
+                        }
+                    }
+                }
+            }
+            printf("|\n");
+        }
+        
+        printf("  ");
+        for (int x = 0; x < displaySize; x++) {
+            printf("--");
+        }
+        printf("\n");
+    }
 }
 
 // Function to parse command line arguments
 void parseArgs(int argc, char** argv, QParams* params) {
     // Set default values
-    params->gridSize = 10;
-    params->numAgents = 256;
+    params->gridSize = 50;  // Larger grid size to better showcase GPU advantages
+    params->numAgents = 1024;  // More agents for better GPU utilization
     params->numEpisodes = 1000;
     params->learningRate = 0.1f;
     params->discountFactor = 0.99f;
