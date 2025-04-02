@@ -41,6 +41,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 19  | 2025-03-28 | Fast Fourier Transform (FFT) Implementation | [Link](./day019/) |
 | 20  | 2025-03-29 | Monte Carlo Option Pricing with CUDA | [Link](./day020/) |
 | 21  | 2025-03-30 | Particle Swarm Optimization (PSO) with CUDA | [Link](./day021/) |
+| 22  | 2025-04-01 | Genetic Algorithm Optimization with CUDA | [Link](./day022/) |
 
 ## Rules
 
