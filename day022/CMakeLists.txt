@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(genetic_algorithm CUDA CXX)
+project(q_learning CUDA CXX)
 
 # Set CUDA architecture based on Jetson Nano
 set(CMAKE_CUDA_ARCHITECTURES 53)  # Compute capability 5.3 for Jetson Nano
@@ -14,19 +14,19 @@ set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -std=c++14")
 include_directories(${CUDA_INCLUDE_DIRS})
 
 # Add executables
-add_executable(genetic_algorithm
-    genetic_algorithm.cu
+add_executable(q_learning
+    q_learning.cu
 )
 
 # Link libraries
-target_link_libraries(genetic_algorithm
+target_link_libraries(q_learning
     ${CUDA_LIBRARIES}
     ${CUDA_curand_LIBRARY}
     m
 )
 
 # Set C++ standard
-set_target_properties(genetic_algorithm PROPERTIES
+set_target_properties(q_learning PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
     CXX_STANDARD 14
     CXX_STANDARD_REQUIRED ON
