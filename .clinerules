@@ -1,0 +1,91 @@
+# .clinerules for 100 Days of CUDA Project
+
+## 1. Project Overview
+
+-   **Goal:** Implement and document CUDA programming concepts daily for 100 days.
+-   **Target Platform:** NVIDIA Jetson Nano (Compute Capability 5.3). All CUDA code MUST be compatible with and tested on this platform.
+-   **Language:** CUDA C++ (primarily C-style CUDA with C++ wrappers/utilities where appropriate).
+-   **Build System:** CMake.
+
+## 2. Directory Structure & File Conventions
+
+-   Each day's work resides in a dedicated directory named `dayXXX` (e.g., `day001`, `day023`).
+-   Each `dayXXX` directory MUST contain:
+    -   `CMakeLists.txt`: Specific build configuration for that day.
+    -   One or more `.cu` source files containing the CUDA implementation. Filenames should be descriptive (e.g., `vector_add.cu`, `fft_comparison.cu`).
+    -   `README.md`: Detailed documentation for the day's work (see Documentation section below).
+-   The root directory contains:
+    -   Top-level `CMakeLists.txt` managing all subdirectories.
+    -   Root `README.md` tracking overall progress.
+    -   `.github/workflows/deploy-to-jetson.yml`: CI/CD pipeline for Jetson deployment.
+-   New days MUST follow this structure.
+
+## 3. Build System (CMake)
+
+-   **Top-Level `CMakeLists.txt`:**
+    -   MUST add new `dayXXX` subdirectories using `add_subdirectory(dayXXX)`.
+-   **Per-Day `CMakeLists.txt`:**
+    -   MUST use `cmake_minimum_required(VERSION 3.10)` or higher.
+    -   MUST declare the project for the day (e.g., `project(dayXXX_concept CUDA CXX)`).
+    -   MUST set the CUDA architecture explicitly for Jetson Nano: `set(CMAKE_CUDA_ARCHITECTURES 53)`.
+    -   MUST set optimization flags, typically `-O3`: `set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3")`.
+    -   MUST define an executable target using `add_executable` or `cuda_add_executable`. The executable name should be concise and relevant (e.g., `vector_add`, `fft_comparison`).
+    -   MUST set C++ standard (e.g., `CXX_STANDARD 14` or consistent with existing files).
+    -   MUST link necessary libraries:
+        -   Always link `CUDA::cudart` or `${CUDA_LIBRARIES}`.
+        -   Link `m` for math functions if needed.
+        -   Link specific CUDA libraries when used (e.g., `CUDA::cublas`, `${CUDA_CUFFT_LIBRARIES}`, `${CUDA_curand_LIBRARY}`).
+        -   Link external libraries like OpenCV (`${OpenCV_LIBS}`) when used. Handle conditional linking if OpenCV is optional.
+    -   Include directories (`include_directories`) should be added if required (e.g., for OpenCV).
+
+## 4. Coding Standards & Practices
+
+-   **Language:** Use CUDA C++. Adhere to the C++ standard specified in CMake (e.g., C++14).
+-   **Error Handling:** Use error-checking macros consistently (e.g., `CHECK_CUDA_ERROR`, `CHECK_CUBLAS_ERROR`, `CHECK_CUFFT_ERROR`). Define them if not present.
+-   **CUDA Kernels:** Kernels should be clearly defined using `__global__`. Use `__device__` for helper functions called from kernels.
+-   **Memory Management:** Explicitly allocate (`cudaMalloc`), transfer (`cudaMemcpy`), and free (`cudaFree`) device memory. Check allocation success. Use Unified Memory (`cudaMallocManaged`) only if appropriate and clearly documented (as in Day 14).
+-   **Performance:**
+    -   Consider memory coalescing.
+    -   Use shared memory (`__shared__`) for optimization where applicable and beneficial (as in Day 13, Day 16). Document its usage and benefits.
+    -   Use CUDA streams for asynchronous operations if relevant (though not heavily featured in the provided days).
+    -   Include CPU comparison implementations where relevant for benchmarking.
+-   **Constants:** Use `#define` or `const` for constants like block sizes, dimensions, simulation parameters.
+-   **Clarity:** Use meaningful variable and function names. Add comments to explain complex logic or CUDA-specific concepts.
+
+## 5. Documentation (`README.md`)
+
+-   **Root `README.md`:**
+    -   When adding a new day, update the progress table with the correct day number, date (YYYY-MM-DD format), description, and link to the `dayXXX/` directory.
+-   **Per-Day `README.md`:**
+    -   MUST have a clear title (e.g., `# Day X: Concept Name`).
+    -   MUST include the following sections (use Markdown headings):
+        -   `## Overview` / `## Introduction`: Briefly explain the concept and goal for the day.
+        -   `## Implementation Details`: Explain the algorithm, CUDA implementation choices, key functions/kernels.
+        -   `## Key CUDA Features Used` / `## Key CUDA Concepts`: List specific CUDA features demonstrated (e.g., shared memory, atomics, cuRAND, cuBLAS).
+        -   `## Performance Considerations` / `## Performance Analysis`: Discuss potential bottlenecks, optimizations applied, memory access patterns, and *analyze the performance results* obtained, especially comparing CPU vs. GPU or different GPU approaches.
+        -   `## Building and Running`: Provide clear instructions using CMake.
+        -   `## Execution Results` / `## Output`: **Crucially, MUST include the actual console output from running the code, ideally on the Jetson Nano.** If images are generated, include them (e.g., using relative paths like `./output/image.jpg`) or describe them.
+        -   `## Learnings and Observations`: Reflect on challenges, insights gained, or surprising results.
+        -   `(Optional) ## Future Improvements`: Ideas for extending or optimizing the code.
+        -   `(Optional) ## References` / `## Resources Used`: Links to documentation, papers, tutorials.
+
+## 6. Testing and Execution
+
+-   Code doesn't have to built on the local dev environment.
+-   Code MUST run correctly on an NVIDIA Jetson Nano (Compute Capability 5.3).
+-   The output should be clear and verifiable. If comparing GPU vs. CPU, include verification logic (e.g., comparing results, calculating MSE).
+-   The CI/CD workflow (`.github/workflows/deploy-to-jetson.yml`) builds and runs *all* day executables. Ensure new code integrates smoothly and does not break the workflow. The workflow expects executables in `build/dayXXX/`.
+
+## 7. Dependencies
+
+-   **Core:** CUDA Toolkit, CMake (>= 3.10).
+-   **CUDA Libraries:** Specify required libraries like cuRAND, cuBLAS, cuFFT in the day's `README.md` and link them in `CMakeLists.txt`.
+-   **External Libraries:** Specify external dependencies like OpenCV in the day's `README.md` and configure them in `CMakeLists.txt`.
+
+## 8. General Guidelines
+
+-   Maintain consistency with the style and structure of previous days.
+-   Focus on one core CUDA concept or application per day.
+-   Ensure code is reasonably well-commented.
+-   Prioritize correctness and clarity, then performance optimization.
+-   Always document the performance results and analysis, especially the Jetson Nano context.
