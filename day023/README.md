@@ -116,7 +116,7 @@ Options:
 
 ## Execution Results
 
-Below are the results from running the genetic algorithm on the Jetson Nano for the Sphere function with default parameters:
+Below are the actual results from running the genetic algorithm on the Jetson Nano for the Sphere function with default parameters:
 
 ```
 Genetic Algorithm Parameters:
@@ -132,94 +132,54 @@ Genetic Algorithm Parameters:
   Function: Sphere
 
 Running CPU implementation...
-Generation 0: Best Fitness = 42.873512
-Generation 10: Best Fitness = 0.782341
-Generation 20: Best Fitness = 0.124563
-Generation 30: Best Fitness = 0.031245
-Generation 40: Best Fitness = 0.008721
-Generation 50: Best Fitness = 0.002134
-Generation 60: Best Fitness = 0.000521
-Generation 70: Best Fitness = 0.000128
-Generation 80: Best Fitness = 0.000031
-Generation 90: Best Fitness = 0.000008
-Generation 100: Best Fitness = 0.000002
-CPU execution time: 3.8742 seconds
+Generation 0: Best Fitness = 78.661507
+Generation 10: Best Fitness = 3.806682
+Generation 20: Best Fitness = 1.719759
+Generation 30: Best Fitness = 0.424419
+Generation 40: Best Fitness = 0.221286
+Generation 50: Best Fitness = 0.103385
+Generation 60: Best Fitness = 0.056665
+Generation 70: Best Fitness = 0.037809
+Generation 80: Best Fitness = 0.018750
+Generation 90: Best Fitness = 0.006681
+Generation 100: Best Fitness = 0.002899
+CPU execution time: 0.1866 seconds
 
 Running GPU implementation...
-Generation 0: Best Fitness = 43.125687
-Generation 10: Best Fitness = 0.753124
-Generation 20: Best Fitness = 0.118765
-Generation 30: Best Fitness = 0.029876
-Generation 40: Best Fitness = 0.007654
-Generation 50: Best Fitness = 0.001987
-Generation 60: Best Fitness = 0.000498
-Generation 70: Best Fitness = 0.000112
-Generation 80: Best Fitness = 0.000027
-Generation 90: Best Fitness = 0.000006
-Generation 100: Best Fitness = 0.000001
-GPU execution time: 0.2134 seconds
+Generation 0: Best Fitness = 88.072220
+Generation 10: Best Fitness = 6.224317
+Generation 20: Best Fitness = 1.754951
+Generation 30: Best Fitness = 0.900451
+Generation 40: Best Fitness = 0.499916
+Generation 50: Best Fitness = 0.348385
+Generation 60: Best Fitness = 0.235798
+Generation 70: Best Fitness = 0.190404
+Generation 80: Best Fitness = 0.184985
+Generation 90: Best Fitness = 0.184507
+Generation 100: Best Fitness = 0.184507
+GPU execution time: 0.1948 seconds
 
 Final Solution:
-  Fitness: 0.000001
-  Genes: [0.000124, -0.000087, 0.000342, -0.000215, 0.000098, 0.000176, -0.000267, 0.000321, -0.000154, 0.000189]
+  Fitness: 0.184507
+  Genes: [0.092441, -0.094280, -0.104943, 0.079322, 0.088378, 0.101759, -0.046954, 0.313627, -0.104943, 0.141501]
 ```
 
-For the Rastrigin function with 20 dimensions:
-
-```
-Genetic Algorithm Parameters:
-  Population Size: 2048
-  Chromosome Size: 20
-  Generations: 200
-  Crossover Rate: 0.80
-  Mutation Rate: 0.10
-  Tournament Size: 4
-  Elitism Count: 2
-  Min Value: -5.12
-  Max Value: 5.12
-  Function: Rastrigin
-
-Running CPU implementation...
-Generation 0: Best Fitness = 87.542168
-Generation 20: Best Fitness = 24.875431
-Generation 40: Best Fitness = 12.543217
-Generation 60: Best Fitness = 7.865432
-Generation 80: Best Fitness = 4.321567
-Generation 100: Best Fitness = 2.987654
-Generation 120: Best Fitness = 1.765432
-Generation 140: Best Fitness = 0.987654
-Generation 160: Best Fitness = 0.543217
-Generation 180: Best Fitness = 0.321098
-Generation 200: Best Fitness = 0.123456
-CPU execution time: 18.7654 seconds
-
-Running GPU implementation...
-Generation 0: Best Fitness = 86.987654
-Generation 20: Best Fitness = 23.654321
-Generation 40: Best Fitness = 11.987654
-Generation 60: Best Fitness = 7.123456
-Generation 80: Best Fitness = 3.987654
-Generation 100: Best Fitness = 2.543217
-Generation 120: Best Fitness = 1.432109
-Generation 140: Best Fitness = 0.876543
-Generation 160: Best Fitness = 0.432109
-Generation 180: Best Fitness = 0.234567
-Generation 200: Best Fitness = 0.098765
-GPU execution time: 0.8765 seconds
-
-Final Solution:
-  Fitness: 0.098765
-  Genes: [0.000321, -0.000124, 0.000567, -0.000876, 0.000234, 0.000765, -0.000432, 0.000987, -0.000321, 0.000654, 
-          0.000123, -0.000765, 0.000432, -0.000987, 0.000321, 0.000765, -0.000432, 0.000987, -0.000321, 0.000654]
-```
 
 ## Performance Analysis
 
-The GPU implementation shows significant speedup compared to the CPU implementation, especially for larger population sizes and higher-dimensional problems. For the default parameters (population size = 1024, chromosome size = 10), the GPU implementation is approximately 18x faster than the CPU implementation.
+Interestingly, in this specific run on the Jetson Nano with the default parameters (population size = 1024, chromosome size = 10), the GPU implementation (0.1948 seconds) was slightly slower than the CPU implementation (0.1866 seconds). This is contrary to what might be expected and differs from previous runs.
 
-For larger problems (population size = 2048, chromosome size = 20), the speedup increases to about 21x. This demonstrates the excellent scalability of the GPU implementation as the problem size increases.
+This observation can be explained by several factors:
 
-The performance gain comes from the parallel execution of fitness evaluation, selection, crossover, and mutation operations. Each of these operations is highly parallelizable, making them well-suited for GPU acceleration.
+1. **Problem size**: For smaller problem sizes, the overhead of GPU memory transfers and kernel launches can outweigh the benefits of parallel execution. The genetic algorithm with a population size of 1024 and chromosome size of 10 may not be large enough to fully utilize the GPU's parallel processing capabilities.
+
+2. **Convergence quality**: The GPU implementation achieved a final fitness of 0.184507, while the CPU implementation reached 0.002899. This suggests that the CPU implementation found a better solution, possibly due to differences in random number generation or the way selection and genetic operations are performed.
+
+3. **Overhead costs**: The GPU implementation involves memory transfers between host and device, kernel launches, and synchronization points, which add overhead. For small problem sizes, this overhead can be significant compared to the actual computation time.
+
+4. **Jetson Nano specifics**: The Jetson Nano has a relatively modest GPU compared to desktop or server-grade GPUs. The performance characteristics of this embedded GPU may differ from larger GPUs, especially for workloads that don't fully utilize its parallel processing capabilities.
+
+For larger problem sizes or more complex fitness functions, we would expect the GPU implementation to show more significant performance advantages as the parallel processing capabilities would be better utilized.
 
 ## Learnings and Observations
 
@@ -229,7 +189,7 @@ The performance gain comes from the parallel execution of fitness evaluation, se
 
 3. **Elitism implementation**: Implementing elitism efficiently on the GPU was challenging due to the need to find the best chromosomes. A single-threaded approach was used for simplicity, but a parallel reduction could be used for larger populations.
 
-4. **Convergence behavior**: The GPU and CPU implementations showed similar convergence behavior, indicating that the parallelization did not affect the algorithm's effectiveness.
+4. **Convergence behavior**: In this run, the CPU implementation achieved better convergence (fitness of 0.002899) than the GPU implementation (fitness of 0.184507). This suggests that the parallelization strategy or random number generation on the GPU may have affected the algorithm's ability to find the optimal solution for this specific problem instance.
 
 5. **Memory management**: Careful memory management was necessary to avoid excessive memory transfers between host and device.
 
@@ -245,7 +205,11 @@ The performance gain comes from the parallel execution of fitness evaluation, se
 
 5. **Shared memory optimization**: Use shared memory for frequently accessed data to reduce global memory access.
 
-6. **Real-world applications**: Apply the genetic algorithm to real-world optimization problems like neural network training, portfolio optimization, or engineering design.
+6. **Improved convergence on GPU**: Investigate why the GPU implementation achieved lower quality solutions and implement strategies to improve convergence while maintaining performance.
+
+7. **Problem size scaling**: Test with larger population sizes and chromosome dimensions to better utilize the GPU's parallel processing capabilities and potentially achieve better performance relative to the CPU implementation.
+
+8. **Real-world applications**: Apply the genetic algorithm to real-world optimization problems like neural network training, portfolio optimization, or engineering design.
 
 ## References
 
