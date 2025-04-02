@@ -42,6 +42,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 20  | 2025-03-29 | Monte Carlo Option Pricing with CUDA | [Link](./day020/) |
 | 21  | 2025-03-30 | Particle Swarm Optimization (PSO) with CUDA | [Link](./day021/) |
 | 22  | 2025-03-31 | CUDA-accelerated Reinforcement Learning (Q-Learning) | [Link](./day022/) |
+| 23  | 2025-04-01 | Genetic Algorithm Optimization with CUDA | [Link](./day023/) |
 
 ## Rules
 
