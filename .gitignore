@@ -35,3 +35,7 @@ obj/
 logs/
 
 # CI/CD specific files
+
+
+# AWS
+*.pem
