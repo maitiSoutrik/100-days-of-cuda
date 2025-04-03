@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(day024_glu CUDA CXX)
 
-# Find CUDA package
-find_package(CUDA REQUIRED)
+# Find CUDA package, require cuBLAS component
+find_package(CUDA REQUIRED COMPONENTS cublas)
 
 # Set CUDA architecture for Jetson Nano (Compute Capability 5.3)
 set(CMAKE_CUDA_ARCHITECTURES 53)
@@ -18,4 +18,4 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_executable(glu glu.cu)
 
 # Link CUDA libraries including cuBLAS
-target_link_libraries(glu ${CUDA_LIBRARIES} ${CUDA_cublas_LIBRARY} m)
+target_link_libraries(glu ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES} m)

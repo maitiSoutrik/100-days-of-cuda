@@ -31,7 +31,18 @@ float sigmoid(float x) {
     return 1.0f / (1.0f + expf(-x));
 }
 
-// Simple CUDA kernel for sigmoid activation and element-wise multiplication
+// CUDA kernel for adding bias to each row of a matrix
+__global__ void add_bias_kernel(float* matrix, const float* bias, 
+                               int rows, int cols) {
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    int row = blockIdx.y;
+    
+    if (col < cols && row < rows) {
+        matrix[row * cols + col] += bias[col];
+    }
+}
+
+// CUDA kernel for sigmoid activation and element-wise multiplication
 __global__ void sigmoid_and_multiply_kernel(float* output, const float* A, const float* B, 
                                            int size) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -113,10 +124,10 @@ int main() {
     // Set random seed for reproducibility
     srand(42);
     
-    // Define dimensions
-    const int batch_size = 1024;  // Large batch size for better GPU utilization
-    const int input_dim = 128;
-    const int output_dim = 64;
+    // Define dimensions - increase for better GPU utilization
+    const int batch_size = 2048;  // Doubled batch size for better GPU utilization
+    const int input_dim = 256;    // Increased input dimension
+    const int output_dim = 128;   // Increased output dimension
     
     // Allocate host memory
     float *h_input, *h_W, *h_b, *h_V, *h_c;
@@ -180,12 +191,11 @@ int main() {
                                   &beta,
                                   d_A, output_dim));
     
-    // Add bias to A
-    // For each batch, add the bias vector
-    for (int i = 0; i < batch_size; i++) {
-        CHECK_CUBLAS_ERROR(cublasSaxpy(handle, output_dim, &alpha, d_b, 1, 
-                                      d_A + i * output_dim, 1));
-    }
+    // Add bias to A using custom kernel
+    dim3 bias_block(256);
+    dim3 bias_grid((output_dim + bias_block.x - 1) / bias_block.x, batch_size);
+    add_bias_kernel<<<bias_grid, bias_block>>>(d_A, d_b, batch_size, output_dim);
+    CHECK_CUDA_ERROR(cudaGetLastError());
     
     // Compute B = Vx + c using cuBLAS (GEMM)
     CHECK_CUBLAS_ERROR(cublasSgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N,
@@ -196,11 +206,9 @@ int main() {
                                   &beta,
                                   d_B, output_dim));
     
-    // Add bias to B
-    for (int i = 0; i < batch_size; i++) {
-        CHECK_CUBLAS_ERROR(cublasSaxpy(handle, output_dim, &alpha, d_c, 1, 
-                                      d_B + i * output_dim, 1));
-    }
+    // Add bias to B using custom kernel
+    add_bias_kernel<<<bias_grid, bias_block>>>(d_B, d_c, batch_size, output_dim);
+    CHECK_CUDA_ERROR(cudaGetLastError());
     
     // Apply sigmoid to B and multiply with A
     int block_size = 256;

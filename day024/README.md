@@ -20,85 +20,88 @@ This implementation demonstrates a CUDA-accelerated GLU layer that can be used i
 
 The implementation consists of the following key components:
 
-1. **cuBLAS for Matrix Operations**: The implementation leverages NVIDIA's cuBLAS library for efficient matrix operations:
-   - Uses cuBLAS GEMM (General Matrix Multiplication) to compute the linear transformations A = Wx + b and B = Vx + c
-   - Uses cuBLAS AXPY for adding bias vectors to the transformed matrices
+1. **cuBLAS for Matrix Multiplications**: The implementation leverages NVIDIA's cuBLAS library for efficient matrix multiplications:
+   - Uses cuBLAS GEMM (General Matrix Multiplication) to compute the core linear transformations (Wx and Vx)
    - This approach takes advantage of highly optimized BLAS routines specifically tuned for NVIDIA GPUs
 
-2. **Custom CUDA Kernel for Gating**: A simple CUDA kernel applies the sigmoid activation and element-wise multiplication:
-   - Computes sigmoid(B) to create the gate
-   - Performs element-wise multiplication of A with the gate to produce the final output
+2. **Custom CUDA Kernels for Bias Addition and Gating**:
+   - A 2D grid kernel efficiently adds bias vectors to each row of the output matrices
+   - A separate kernel applies the sigmoid activation and element-wise multiplication
+   - These custom kernels are optimized for the specific operations they perform
 
-3. **CPU Implementation**: A reference CPU implementation for verification and performance comparison.
+3. **Larger Dimensions for Better GPU Utilization**:
+   - Uses a large batch size (2048) and increased feature dimensions (256 input, 128 output)
+   - This provides sufficient parallelism to fully utilize the GPU's compute resources
+   - Larger workloads help amortize kernel launch and memory transfer overhead
 
-4. **Parameter Initialization**: Weights and biases are initialized using Xavier/Glorot initialization to ensure proper scaling.
+4. **CPU Implementation**: A reference CPU implementation for verification and performance comparison.
 
-5. **Performance Measurement**: CUDA events are used for precise timing of GPU operations, while clock() is used for CPU timing.
+5. **Parameter Initialization**: Weights and biases are initialized using Xavier/Glorot initialization to ensure proper scaling.
 
-6. **Verification**: Mean Squared Error (MSE) is calculated between the CPU and GPU results to verify correctness.
+6. **Performance Measurement**: CUDA events are used for precise timing of GPU operations, while clock() is used for CPU timing.
+
+7. **Verification**: Mean Squared Error (MSE) is calculated between the CPU and GPU results to verify correctness.
 
 The implementation supports arbitrary batch sizes and dimensions, making it flexible for various neural network architectures.
 
 ## Key CUDA Features Used
 
-- **cuBLAS Library**: Leverages NVIDIA's highly optimized BLAS library for matrix operations.
-- **CUDA Kernels**: Custom kernel for sigmoid activation and element-wise multiplication.
+- **cuBLAS Library**: Leverages NVIDIA's highly optimized BLAS library for matrix multiplications.
+- **Custom CUDA Kernels**: Specialized kernels for bias addition and gating operations.
+- **2D Grid Organization**: Efficient thread organization for the bias addition kernel.
 - **Memory Management**: Explicit device memory allocation, host-to-device and device-to-host transfers.
 - **Error Handling**: Comprehensive error checking using custom macros for both CUDA and cuBLAS operations.
 - **CUDA Events**: Used for precise timing of GPU operations.
-- **Thread Organization**: Efficient thread organization for the custom kernel.
 
 ## Performance Considerations
 
 The implementation has several performance optimizations and characteristics:
 
-1. **cuBLAS for Matrix Operations**: 
-   - Uses highly optimized cuBLAS routines for matrix multiplications
-   - These routines are specifically tuned for NVIDIA GPUs and often outperform custom CUDA kernels
-   - cuBLAS automatically handles memory access patterns, thread organization, and other low-level optimizations
-
-2. **Hybrid Approach**:
-   - Matrix operations are handled by cuBLAS for maximum performance
-   - Element-wise operations (sigmoid and multiplication) are handled by a custom CUDA kernel
+1. **Optimized Hybrid Approach**:
+   - Matrix multiplications are handled by cuBLAS for maximum performance
+   - Bias addition uses a custom 2D grid kernel that processes all batches in parallel
+   - Element-wise operations use a custom kernel optimized for that specific task
    - This hybrid approach leverages the strengths of both libraries and custom code
 
-3. **Batch Size Impact**: 
-   - The implementation uses a batch size of 1024 to ensure efficient GPU utilization
-   - Larger batch sizes allow better amortization of kernel launch and memory transfer overhead
-   - This is particularly important on the Jetson Nano, which has limited compute resources
+2. **Reduced Kernel Launch Overhead**:
+   - The bias addition kernel processes all batches in a single launch
+   - This replaces multiple cuBLAS SAXPY calls, significantly reducing overhead
+   - Kernel launch overhead is a major factor on resource-constrained devices like the Jetson Nano
 
-4. **Memory Efficiency**:
+3. **Increased Workload Size**: 
+   - The implementation uses larger dimensions (batch_size=2048, input_dim=256, output_dim=128)
+   - This provides sufficient work to fully utilize the GPU's parallel processing capabilities
+   - Larger workloads are critical for achieving good performance on GPUs
+
+4. **Efficient Thread Organization**:
+   - The bias addition kernel uses a 2D grid where:
+     * The x-dimension corresponds to output features
+     * The y-dimension corresponds to batch samples
+   - This organization matches the data layout for optimal memory access patterns
+
+5. **Memory Efficiency**:
    - Uses temporary buffers (d_A and d_B) to store intermediate results
    - Minimizes memory transfers between host and device
    - Performs all computations on the GPU to avoid costly data transfers
 
-5. **Computation Intensity**: 
-   - The GLU operation involves matrix-vector multiplications which are compute-intensive
-   - cuBLAS is particularly well-suited for such operations, especially on resource-constrained devices like the Jetson Nano
-
 6. **Further Potential Optimizations**:
-   - Implement batch processing for bias addition to reduce kernel launch overhead
+   - Implement shared memory usage in the custom kernels
    - Consider using half-precision (FP16) for improved performance on compatible hardware
    - Explore using tensor cores on newer GPU architectures
    - Investigate cuDNN for even more optimized implementations of neural network layers
 
 ## Building and Running
 
-To build the GLU implementation:
+To build the GLU implementation, ensure you are in the `day024` directory and follow these steps:
 
 ```bash
-# Navigate to the day024 directory
-cd day024
-
-# Create a build directory
-mkdir -p build && cd build
-
-# Configure with CMake
+mkdir build
+cd build
 cmake ..
-
-# Build
 make
 ```
+
+This will compile the `glu.cu` file and create the executable `glu` in the `day024/build` directory.
 
 To run the executable:
 
@@ -108,22 +111,22 @@ To run the executable:
 
 ## Execution Results
 
-When executed on the NVIDIA Jetson Nano, the program produces output similar to the following:
+When executed on the NVIDIA Jetson Nano with the optimized implementation (using cuBLAS and larger dimensions), the program produces the following output:
 
 ```
-GLU Implementation Results:
-Batch Size: 32, Input Dimension: 128, Output Dimension: 64
-GPU Execution Time: 0.3456 ms
-CPU Execution Time: 5.7890 ms
-Speedup: 16.75x
-Mean Squared Error between CPU and GPU results: 0.0000000123
+GLU Implementation Results (using cuBLAS):
+Batch Size: 2048, Input Dimension: 256, Output Dimension: 128
+GPU Execution Time: 52.1353 ms
+CPU Execution Time: 385.9830 ms
+Speedup: 7.40x
+Mean Squared Error between CPU and GPU results: 0.0000000000
 
 Sample Outputs (first 5 elements of first batch):
-CPU: 0.123456 -0.234567 0.345678 -0.456789 0.567890
-GPU: 0.123456 -0.234567 0.345678 -0.456789 0.567890
+CPU: 0.284045 -0.006353 -0.131390 0.059628 -0.212725 
+GPU: 0.284045 -0.006354 -0.131391 0.059628 -0.212725 
 ```
 
-Note: The actual values will vary based on the random initialization, but the MSE should be very small, indicating that the GPU implementation produces results that match the CPU implementation.
+Note: The actual values will vary based on the random initialization, but the MSE should be very small (close to zero), indicating that the GPU implementation produces results that match the CPU implementation. The speedup of 7.40x demonstrates the significant performance improvement achieved by using cuBLAS and larger problem sizes on the GPU.
 
 ## Learnings and Observations
 
