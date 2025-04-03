@@ -131,7 +131,7 @@ int main() {
     srand(42);
     
     // Define dimensions
-    const int batch_size = 32;
+    const int batch_size = 1024;  // Increased from 32 to 1024 for better GPU utilization
     const int input_dim = 128;
     const int output_dim = 64;
     
