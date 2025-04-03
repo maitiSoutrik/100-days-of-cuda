@@ -17,5 +17,5 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Add executable
 add_executable(glu glu.cu)
 
-# Link CUDA libraries
-target_link_libraries(glu ${CUDA_LIBRARIES} m)
+# Link CUDA libraries including cuBLAS
+target_link_libraries(glu ${CUDA_LIBRARIES} ${CUDA_cublas_LIBRARY} m)

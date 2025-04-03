@@ -3,8 +3,7 @@
 #include <math.h>
 #include <time.h>
 #include <cuda_runtime.h>
-#include <curand.h>
-#include <curand_kernel.h>
+#include <cublas_v2.h>
 
 // Error checking macro
 #define CHECK_CUDA_ERROR(call) \
@@ -17,46 +16,30 @@ do { \
     } \
 } while(0)
 
+// cuBLAS error checking macro
+#define CHECK_CUBLAS_ERROR(call) \
+do { \
+    cublasStatus_t status = call; \
+    if (status != CUBLAS_STATUS_SUCCESS) { \
+        fprintf(stderr, "cuBLAS error at %s:%d - %d\n", __FILE__, __LINE__, status); \
+        exit(EXIT_FAILURE); \
+    } \
+} while(0)
+
 // Sigmoid activation function for CPU
 float sigmoid(float x) {
     return 1.0f / (1.0f + expf(-x));
 }
 
-// Sigmoid activation function for GPU
-__device__ float sigmoid_device(float x) {
-    return 1.0f / (1.0f + expf(-x));
-}
-
-// GLU kernel implementation
-__global__ void glu_kernel(float* output, const float* input, 
-                          const float* W, const float* b,
-                          const float* V, const float* c,
-                          int batch_size, int input_dim, int output_dim) {
+// Simple CUDA kernel for sigmoid activation and element-wise multiplication
+__global__ void sigmoid_and_multiply_kernel(float* output, const float* A, const float* B, 
+                                           int size) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    
-    if (idx < batch_size * output_dim) {
-        int batch_idx = idx / output_dim;
-        int feature_idx = idx % output_dim;
-        
-        // Calculate linear transformation A = Wx + b
-        float A = 0.0f;
-        for (int i = 0; i < input_dim; i++) {
-            A += W[feature_idx * input_dim + i] * input[batch_idx * input_dim + i];
-        }
-        A += b[feature_idx];
-        
-        // Calculate linear transformation B = Vx + c
-        float B = 0.0f;
-        for (int i = 0; i < input_dim; i++) {
-            B += V[feature_idx * input_dim + i] * input[batch_idx * input_dim + i];
-        }
-        B += c[feature_idx];
-        
-        // Apply sigmoid to B to get the gate
-        float gate = sigmoid_device(B);
-        
-        // Apply gating: output = A ⊙ sigmoid(B)
-        output[idx] = A * gate;
+    if (idx < size) {
+        // Apply sigmoid to B
+        float gate = 1.0f / (1.0f + expf(-B[idx]));
+        // Multiply A by sigmoid(B)
+        output[idx] = A[idx] * gate;
     }
 }
 
@@ -131,7 +114,7 @@ int main() {
     srand(42);
     
     // Define dimensions
-    const int batch_size = 1024;  // Increased from 32 to 1024 for better GPU utilization
+    const int batch_size = 1024;  // Large batch size for better GPU utilization
     const int input_dim = 128;
     const int output_dim = 64;
     
@@ -153,6 +136,7 @@ int main() {
     
     // Allocate device memory
     float *d_input, *d_W, *d_b, *d_V, *d_c, *d_output;
+    float *d_A, *d_B;  // Temporary buffers for linear transformations
     
     CHECK_CUDA_ERROR(cudaMalloc((void**)&d_input, batch_size * input_dim * sizeof(float)));
     CHECK_CUDA_ERROR(cudaMalloc((void**)&d_W, output_dim * input_dim * sizeof(float)));
@@ -160,6 +144,8 @@ int main() {
     CHECK_CUDA_ERROR(cudaMalloc((void**)&d_V, output_dim * input_dim * sizeof(float)));
     CHECK_CUDA_ERROR(cudaMalloc((void**)&d_c, output_dim * sizeof(float)));
     CHECK_CUDA_ERROR(cudaMalloc((void**)&d_output, batch_size * output_dim * sizeof(float)));
+    CHECK_CUDA_ERROR(cudaMalloc((void**)&d_A, batch_size * output_dim * sizeof(float)));
+    CHECK_CUDA_ERROR(cudaMalloc((void**)&d_B, batch_size * output_dim * sizeof(float)));
     
     // Copy data from host to device
     CHECK_CUDA_ERROR(cudaMemcpy(d_input, h_input, batch_size * input_dim * sizeof(float), cudaMemcpyHostToDevice));
@@ -168,9 +154,9 @@ int main() {
     CHECK_CUDA_ERROR(cudaMemcpy(d_V, h_V, output_dim * input_dim * sizeof(float), cudaMemcpyHostToDevice));
     CHECK_CUDA_ERROR(cudaMemcpy(d_c, h_c, output_dim * sizeof(float), cudaMemcpyHostToDevice));
     
-    // Define grid and block dimensions
-    int block_size = 256;
-    int grid_size = (batch_size * output_dim + block_size - 1) / block_size;
+    // Initialize cuBLAS
+    cublasHandle_t handle;
+    CHECK_CUBLAS_ERROR(cublasCreate(&handle));
     
     // Create CUDA events for timing
     cudaEvent_t start, stop;
@@ -180,9 +166,46 @@ int main() {
     // Measure GPU execution time
     cudaEventRecord(start);
     
-    // Launch GLU kernel
-    glu_kernel<<<grid_size, block_size>>>(d_output, d_input, d_W, d_b, d_V, d_c, 
-                                         batch_size, input_dim, output_dim);
+    // Constants for cuBLAS GEMM
+    const float alpha = 1.0f;
+    const float beta = 0.0f;
+    
+    // Compute A = Wx + b using cuBLAS (GEMM)
+    // Note: cuBLAS uses column-major order, so we compute (input * W^T)^T = W * input
+    CHECK_CUBLAS_ERROR(cublasSgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N,
+                                  output_dim, batch_size, input_dim,
+                                  &alpha,
+                                  d_W, input_dim,
+                                  d_input, input_dim,
+                                  &beta,
+                                  d_A, output_dim));
+    
+    // Add bias to A
+    // For each batch, add the bias vector
+    for (int i = 0; i < batch_size; i++) {
+        CHECK_CUBLAS_ERROR(cublasSaxpy(handle, output_dim, &alpha, d_b, 1, 
+                                      d_A + i * output_dim, 1));
+    }
+    
+    // Compute B = Vx + c using cuBLAS (GEMM)
+    CHECK_CUBLAS_ERROR(cublasSgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N,
+                                  output_dim, batch_size, input_dim,
+                                  &alpha,
+                                  d_V, input_dim,
+                                  d_input, input_dim,
+                                  &beta,
+                                  d_B, output_dim));
+    
+    // Add bias to B
+    for (int i = 0; i < batch_size; i++) {
+        CHECK_CUBLAS_ERROR(cublasSaxpy(handle, output_dim, &alpha, d_c, 1, 
+                                      d_B + i * output_dim, 1));
+    }
+    
+    // Apply sigmoid to B and multiply with A
+    int block_size = 256;
+    int grid_size = (batch_size * output_dim + block_size - 1) / block_size;
+    sigmoid_and_multiply_kernel<<<grid_size, block_size>>>(d_output, d_A, d_B, batch_size * output_dim);
     
     // Check for kernel launch errors
     CHECK_CUDA_ERROR(cudaGetLastError());
@@ -210,7 +233,7 @@ int main() {
     float mse = calculate_mse(h_output_cpu, h_output_gpu, batch_size * output_dim);
     
     // Print results
-    printf("GLU Implementation Results:\n");
+    printf("GLU Implementation Results (using cuBLAS):\n");
     printf("Batch Size: %d, Input Dimension: %d, Output Dimension: %d\n", 
            batch_size, input_dim, output_dim);
     printf("GPU Execution Time: %.4f ms\n", gpu_time);
@@ -230,6 +253,9 @@ int main() {
     }
     printf("\n");
     
+    // Destroy cuBLAS handle
+    cublasDestroy(handle);
+    
     // Free device memory
     cudaFree(d_input);
     cudaFree(d_W);
@@ -237,6 +263,8 @@ int main() {
     cudaFree(d_V);
     cudaFree(d_c);
     cudaFree(d_output);
+    cudaFree(d_A);
+    cudaFree(d_B);
     
     // Free host memory
     free(h_input);

@@ -20,51 +20,67 @@ This implementation demonstrates a CUDA-accelerated GLU layer that can be used i
 
 The implementation consists of the following key components:
 
-1. **GLU Kernel**: The core CUDA kernel that computes the GLU function for a batch of input vectors. For each element in the output, the kernel:
-   - Computes the linear transformation A = Wx + b
-   - Computes the linear transformation B = Vx + c
-   - Applies the sigmoid function to B to create a gate
-   - Multiplies A by the gate to produce the final output
+1. **cuBLAS for Matrix Operations**: The implementation leverages NVIDIA's cuBLAS library for efficient matrix operations:
+   - Uses cuBLAS GEMM (General Matrix Multiplication) to compute the linear transformations A = Wx + b and B = Vx + c
+   - Uses cuBLAS AXPY for adding bias vectors to the transformed matrices
+   - This approach takes advantage of highly optimized BLAS routines specifically tuned for NVIDIA GPUs
 
-2. **CPU Implementation**: A reference CPU implementation for verification and performance comparison.
+2. **Custom CUDA Kernel for Gating**: A simple CUDA kernel applies the sigmoid activation and element-wise multiplication:
+   - Computes sigmoid(B) to create the gate
+   - Performs element-wise multiplication of A with the gate to produce the final output
 
-3. **Parameter Initialization**: Weights and biases are initialized using Xavier/Glorot initialization to ensure proper scaling.
+3. **CPU Implementation**: A reference CPU implementation for verification and performance comparison.
 
-4. **Performance Measurement**: CUDA events are used to measure the execution time of the GPU implementation, while clock() is used for the CPU implementation.
+4. **Parameter Initialization**: Weights and biases are initialized using Xavier/Glorot initialization to ensure proper scaling.
 
-5. **Verification**: Mean Squared Error (MSE) is calculated between the CPU and GPU results to verify correctness.
+5. **Performance Measurement**: CUDA events are used for precise timing of GPU operations, while clock() is used for CPU timing.
+
+6. **Verification**: Mean Squared Error (MSE) is calculated between the CPU and GPU results to verify correctness.
 
 The implementation supports arbitrary batch sizes and dimensions, making it flexible for various neural network architectures.
 
 ## Key CUDA Features Used
 
-- **CUDA Kernels**: The core computation is implemented as a CUDA kernel that runs in parallel across multiple threads.
+- **cuBLAS Library**: Leverages NVIDIA's highly optimized BLAS library for matrix operations.
+- **CUDA Kernels**: Custom kernel for sigmoid activation and element-wise multiplication.
 - **Memory Management**: Explicit device memory allocation, host-to-device and device-to-host transfers.
-- **Error Handling**: Comprehensive error checking using a custom macro.
+- **Error Handling**: Comprehensive error checking using custom macros for both CUDA and cuBLAS operations.
 - **CUDA Events**: Used for precise timing of GPU operations.
-- **Thread Organization**: Threads are organized to process one output element per thread, with appropriate grid and block dimensions.
+- **Thread Organization**: Efficient thread organization for the custom kernel.
 
 ## Performance Considerations
 
-The current implementation has several performance characteristics and potential optimizations:
+The implementation has several performance optimizations and characteristics:
 
-1. **Memory Access Patterns**: The kernel performs multiple global memory accesses for each input and weight element. This could be optimized by:
-   - Using shared memory to cache portions of the input and weight matrices
-   - Implementing tiling techniques to improve memory coalescing
+1. **cuBLAS for Matrix Operations**: 
+   - Uses highly optimized cuBLAS routines for matrix multiplications
+   - These routines are specifically tuned for NVIDIA GPUs and often outperform custom CUDA kernels
+   - cuBLAS automatically handles memory access patterns, thread organization, and other low-level optimizations
 
-2. **Computation Intensity**: The GLU operation involves matrix-vector multiplications which are compute-intensive. The current implementation:
-   - Uses a simple loop for matrix-vector multiplication
-   - Could be further optimized using techniques like loop unrolling or using cuBLAS for the linear transformations
+2. **Hybrid Approach**:
+   - Matrix operations are handled by cuBLAS for maximum performance
+   - Element-wise operations (sigmoid and multiplication) are handled by a custom CUDA kernel
+   - This hybrid approach leverages the strengths of both libraries and custom code
 
-3. **Thread Divergence**: The current implementation has minimal thread divergence since each thread follows the same execution path.
+3. **Batch Size Impact**: 
+   - The implementation uses a batch size of 1024 to ensure efficient GPU utilization
+   - Larger batch sizes allow better amortization of kernel launch and memory transfer overhead
+   - This is particularly important on the Jetson Nano, which has limited compute resources
 
-4. **Batch Processing**: The implementation processes multiple samples in parallel, which helps amortize kernel launch overhead.
+4. **Memory Efficiency**:
+   - Uses temporary buffers (d_A and d_B) to store intermediate results
+   - Minimizes memory transfers between host and device
+   - Performs all computations on the GPU to avoid costly data transfers
 
-5. **Potential Optimizations**:
-   - Implement a more efficient matrix multiplication algorithm
-   - Use shared memory to reduce global memory accesses
+5. **Computation Intensity**: 
+   - The GLU operation involves matrix-vector multiplications which are compute-intensive
+   - cuBLAS is particularly well-suited for such operations, especially on resource-constrained devices like the Jetson Nano
+
+6. **Further Potential Optimizations**:
+   - Implement batch processing for bias addition to reduce kernel launch overhead
    - Consider using half-precision (FP16) for improved performance on compatible hardware
    - Explore using tensor cores on newer GPU architectures
+   - Investigate cuDNN for even more optimized implementations of neural network layers
 
 ## Building and Running
 
