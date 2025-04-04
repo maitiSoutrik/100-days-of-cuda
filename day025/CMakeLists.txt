@@ -15,7 +15,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 add_executable(passthrough_filter passthrough_filter.cu)
 
 # Link CUDA runtime library
-target_link_libraries(passthrough_filter PRIVATE CUDA::cudart)
+target_link_libraries(passthrough_filter PRIVATE ${CUDA_LIBRARIES})
 
 # Link math library if needed (e.g., for sqrt, pow)
 target_link_libraries(passthrough_filter PRIVATE m)
