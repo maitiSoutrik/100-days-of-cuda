@@ -44,6 +44,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 22  | 2025-03-31 | CUDA-accelerated Reinforcement Learning (Q-Learning) | [Link](./day022/) |
 | 23  | 2025-04-01 | Genetic Algorithm Optimization with CUDA | [Link](./day023/) |
 | 24  | 2025-04-02 | Gated Linear Unit (GLU) Implementation | [Link](./day024/) |
+| 25  | 2025-04-03 | Parallel Point Cloud PassThrough Filter | [Link](./day025/) |
 
 ## Rules
 
