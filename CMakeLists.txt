@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
 project(100-days-of-cuda LANGUAGES CXX CUDA)
+find_package(CUDA REQUIRED)
+cmake_minimum_required(VERSION 3.10)
+project(100-days-of-cuda LANGUAGES CXX CUDA)
+find_package(CUDA REQUIRED)
 
 # CI/CD Documentation
 # ==================
