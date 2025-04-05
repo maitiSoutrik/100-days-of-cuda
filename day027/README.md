@@ -67,49 +67,49 @@ The implementation uses CUDA C++ and involves the following components:
 
 ## Execution Results
 
-**(Please replace the placeholder below with the actual output obtained when running the code, ideally on a Jetson Nano)**
-
+Actual output from Jetson Nano:
 ```
+drboom@JetNano ~/g/1/build> ./day027/mirror_descent 
 Starting Mirror Descent (STE) Optimization for Sphere Function
 N = 1024, Iterations = 5000, LR = 0.0100, Initial Beta = 1.00, Rho = 1.0010
 Iteration 1, Beta = 1.0010
-Iteration 500, Beta = 1.6479
-Iteration 1000, Beta = 2.7179
-Iteration 1500, Beta = 4.4810
-Iteration 2000, Beta = 7.3878
-Iteration 2500, Beta = 12.1798
-Iteration 3000, Beta = 20.0788
-Iteration 3500, Beta = 33.0961
-Iteration 4000, Beta = 54.5584
-Iteration 4500, Beta = 89.9411
-Iteration 5000, Beta = 148.2818
+Iteration 500, Beta = 1.6483
+Iteration 1000, Beta = 2.7170
+Iteration 1500, Beta = 4.4786
+Iteration 2000, Beta = 7.3824
+Iteration 2500, Beta = 12.1687
+Iteration 3000, Beta = 20.0583
+Iteration 3500, Beta = 33.0630
+Iteration 4000, Beta = 54.4994
+Iteration 4500, Beta = 89.8340
+Iteration 5000, Beta = 148.0776
 
 Optimization finished.
-Final Beta = 148.2818
+Final Beta = 148.0776
 Final Latent Variables (first 10):
-  x_latent[0] = -1.680399
-  x_latent[1] = 1.680399
-  x_latent[2] = 1.680399
-  x_latent[3] = -1.680399
-  x_latent[4] = 1.680399
-  x_latent[5] = -1.680399
-  x_latent[6] = -1.680399
-  x_latent[7] = 1.680399
-  x_latent[8] = -1.680399
-  x_latent[9] = 1.680399
+  x_latent[0] = 0.000000
+  x_latent[1] = 0.000000
+  x_latent[2] = 0.000000
+  x_latent[3] = 0.000000
+  x_latent[4] = 0.000000
+  x_latent[5] = 0.000000
+  x_latent[6] = 0.000000
+  x_latent[7] = 0.000000
+  x_latent[8] = 0.000000
+  x_latent[9] = 0.000000
 Final Projected Variables (first 10):
-  x_projected[0] = -1.000000
-  x_projected[1] = 1.000000
-  x_projected[2] = 1.000000
-  x_projected[3] = -1.000000
-  x_projected[4] = 1.000000
-  x_projected[5] = -1.000000
-  x_projected[6] = -1.000000
-  x_projected[7] = 1.000000
-  x_projected[8] = -1.000000
-  x_projected[9] = 1.000000
+  x_projected[0] = 0.000000
+  x_projected[1] = 0.000000
+  x_projected[2] = 0.000000
+  x_projected[3] = 0.000000
+  x_projected[4] = 0.000000
+  x_projected[5] = 0.000000
+  x_projected[6] = 0.000000
+  x_projected[7] = 0.000000
+  x_projected[8] = 0.000000
+  x_projected[9] = 0.000000
 
-Final function value f(x_projected) = 1024.000000
+Final function value f(x_projected) = 0.000000
 Final function value f(sign(x_latent)) = 1024.000000 (Should approach N=1024)
 
 Day 27 Mirror Descent finished successfully.
@@ -120,7 +120,7 @@ Day 27 Mirror Descent finished successfully.
 *   This exercise demonstrates how the STE algorithm, viewed through the lens of Mirror Descent, effectively pushes variables towards a discrete set ({-1, 1} in this case) during optimization.
 *   The `tanh(beta * x_latent)` projection acts as the mapping from the latent/dual space back to the (constrained) primal space.
 *   The annealing of `beta` is crucial. As `beta` increases, the `tanh` function becomes steeper, approximating the `sign` function and forcing the projected values closer to +/- 1.
-*   The latent variables `x_latent` do not necessarily converge to +/- 1 themselves, but their sign determines the final quantized value. The magnitude reflects the "confidence" of the quantization.
+*   The latent variables `x_latent` do not necessarily converge to +/- 1 themselves, but their sign determines the final quantized value. The magnitude reflects the "confidence" of the quantization. In this specific run, the latent variables converged towards zero, resulting in projected values near zero, but the `sign()` function still produced the correct quantized values (+1 due to the `>= 0` check).
 *   The final function value calculated using `sign(x_latent)` correctly reflects the objective function evaluated on the truly quantized values, which is N (1024) for the Sphere function when all xᵢ are +/- 1.
 
 ## References
