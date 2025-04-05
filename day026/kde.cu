@@ -59,7 +59,7 @@ int main() {
     int grid_size = (M + block_size - 1) / block_size;
 
     // Launch kernel
-    compute_kde_kernel<<<grid_size, block_size>>>(d_values, query_points, d_density_estimates, N, M, h);
+    compute_kde_kernel<<<grid_size, block_size>>>(d_values, d_query_points, d_density_estimates, N, M, h);
 
     // Error check
     cudaError_t cuda_status = cudaGetLastError();
