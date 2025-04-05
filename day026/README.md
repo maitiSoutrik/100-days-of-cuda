@@ -40,17 +40,18 @@ Key components:
 ## Execution Results
 
 ```
+drboom@JetNano ~/g/1/build> ./day026/kde
 KDE Results (first 10):
-Query Point 0: 0.00011959
-Query Point 0.001001001: 0.00012002
-Query Point 0.002002002: 0.00012045
-Query Point 0.003003003: 0.00012088
-Query Point 0.004004004: 0.00012131
-Query Point 0.005005005: 0.00012174
-Query Point 0.006006006: 0.00012217
-Query Point 0.007007007: 0.0001226
-Query Point 0.008008008: 0.00012303
-Query Point 0.009009009: 0.00012346
+Query Point 0: 0.503697
+Query Point 0.001001: 0.507743
+Query Point 0.002002: 0.511792
+Query Point 0.003003: 0.515839
+Query Point 0.004004: 0.519886
+Query Point 0.005005: 0.523931
+Query Point 0.00600601: 0.527975
+Query Point 0.00700701: 0.532018
+Query Point 0.00800801: 0.536056
+Query Point 0.00900901: 0.540093
 ```
 
 (Note: The results will vary slightly due to the random data generation.)
