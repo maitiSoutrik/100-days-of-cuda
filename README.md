@@ -45,6 +45,8 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 23  | 2025-04-01 | Genetic Algorithm Optimization with CUDA | [Link](./day023/) |
 | 24  | 2025-04-02 | Gated Linear Unit (GLU) Implementation | [Link](./day024/) |
 | 25  | 2025-04-03 | Parallel Point Cloud PassThrough Filter | [Link](./day025/) |
+| 26  | 2025-04-04 | Kernel Density Estimation (KDE) | [Link](./day026/) |
+| 27  | 2025-04-05 | Mirror Descent (STE) for Quantization | [Link](./day027/) |
 
 ## Rules
 
