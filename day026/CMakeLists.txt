@@ -7,3 +7,4 @@ set(CMAKE_CXX_STANDARD 14)
 
 add_executable(kde kde.cu)
 target_link_libraries(kde PRIVATE ${CUDA_LIBRARIES})
+target_link_libraries(kde PRIVATE m)
