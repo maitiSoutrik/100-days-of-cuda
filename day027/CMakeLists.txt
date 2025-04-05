@@ -22,7 +22,8 @@ cuda_add_executable(mirror_descent mirror_descent.cu)
 
 # Link CUDA runtime and math libraries
 # Use plain signature to match internal FindCUDA usage on older CMake versions
-target_link_libraries(mirror_descent CUDA::cudart m)
+target_link_libraries(mirror_descent PRIVATE ${CUDA_LIBRARIES})
+target_link_libraries(mirror_descent PRIVATE m)
 
 # Optional: Add include directories if needed (none needed for this simple example)
 # target_include_directories(mirror_descent PRIVATE ${CUDA_INCLUDE_DIRS})
