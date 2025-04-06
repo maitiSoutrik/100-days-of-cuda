@@ -47,6 +47,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 25  | 2025-04-03 | Parallel Point Cloud PassThrough Filter | [Link](./day025/) |
 | 26  | 2025-04-04 | Kernel Density Estimation (KDE) | [Link](./day026/) |
 | 27  | 2025-04-05 | Mirror Descent (STE) for Quantization | [Link](./day027/) |
+| 28  | 2025-04-06 | Mini-Batch SGD for Linear Regression | [Link](./day028/) |
 
 ## Rules
 
