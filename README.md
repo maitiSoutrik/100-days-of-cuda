@@ -1,5 +1,7 @@
 # 100 Days of CUDA Challenge
 
+[![Deploy to Jetson Nano](https://github.com/maitiSoutrik/100-days-of-cuda/actions/workflows/deploy-to-jetson.yml/badge.svg)](https://github.com/maitiSoutrik/100-days-of-cuda/actions/workflows/deploy-to-jetson.yml)
+
 This repository tracks my journey through the 100 Days of CUDA Challenge. Each day, I'll be coding CUDA kernels and documenting my progress.
 
 ## About the Challenge
