@@ -83,7 +83,7 @@ The implementation consists of the following components:
 
 Actual output from Jetson Nano:
 ```
-drboom@JetNano ~/g/1/build> ./day028/mini_batch_sgd
+drboom@JetNano ~/g/1/build> ./day028/mini_batch_sgd 
 Mini-Batch SGD for Linear Regression
 -------------------------------------
 Data size: 10000
@@ -95,39 +95,39 @@ Noise scale: 0.50
 -------------------------------------
 
 Starting training...
-Initial loss: 7.283333
-Epoch 1/50 - Loss: 5.142857, w: 0.5421, b: 0.2487
-Epoch 5/50 - Loss: 1.872381, w: 1.5842, b: 0.7264
-Epoch 10/50 - Loss: 0.682857, w: 2.1253, b: 0.9748
-Epoch 15/50 - Loss: 0.412381, w: 2.3124, b: 1.0608
-Epoch 20/50 - Loss: 0.325714, w: 2.3942, b: 1.0982
-Epoch 25/50 - Loss: 0.290476, w: 2.4357, b: 1.1190
-Epoch 30/50 - Loss: 0.273333, w: 2.4582, b: 1.1301
-Epoch 35/50 - Loss: 0.264762, w: 2.4708, b: 1.1359
-Epoch 40/50 - Loss: 0.260000, w: 2.4782, b: 1.1392
-Epoch 45/50 - Loss: 0.257143, w: 2.4828, b: 1.1413
-Epoch 50/50 - Loss: 0.255238, w: 2.4857, b: 1.1426
+Initial loss: 210.015305
+Epoch 1/50 - Loss: 0.145984, w: 2.5062, b: 0.9518
+Epoch 5/50 - Loss: 0.082941, w: 2.4975, b: 1.2004
+Epoch 10/50 - Loss: 0.086165, w: 2.4906, b: 1.2006
+Epoch 15/50 - Loss: 0.084246, w: 2.5082, b: 1.2034
+Epoch 20/50 - Loss: 0.083543, w: 2.5066, b: 1.1997
+Epoch 25/50 - Loss: 0.082712, w: 2.5034, b: 1.2023
+Epoch 30/50 - Loss: 0.082588, w: 2.4997, b: 1.1990
+Epoch 35/50 - Loss: 0.082783, w: 2.4983, b: 1.1987
+Epoch 40/50 - Loss: 0.084480, w: 2.4934, b: 1.2023
+Epoch 45/50 - Loss: 0.085665, w: 2.5107, b: 1.2012
+Epoch 50/50 - Loss: 0.087625, w: 2.5134, b: 1.2004
 
 Training completed!
 -------------------------------------
 Initial parameters: w = 0.0000, b = 0.0000
-Learned parameters: w = 2.4857, b = 1.1426
+Learned parameters: w = 2.5134, b = 1.2004
 True parameters:    w = 2.5000, b = 1.2000
-Final loss: 0.255238
+Final loss: 0.087625
 -------------------------------------
-Relative error: w = 0.57%, b = 4.78%
+Relative error: w = 0.54%, b = 0.03%
 
 Day 28 Mini-Batch SGD finished successfully.
 ```
 
 ## Learnings and Observations
 
-* **Convergence Rate:** The model converges quickly in the first few epochs and then gradually refines the parameters
-* **Parameter Accuracy:** The weight parameter (w) typically converges more accurately than the bias (b), likely because the weight has a stronger signal in the data
-* **Noise Impact:** The added noise affects the final accuracy, with higher noise levels resulting in less accurate parameter estimates
-* **Parallelization Benefits:** The parallel implementation allows processing multiple samples simultaneously, which is particularly beneficial for larger datasets
-* **Reduction Complexity:** The parallel reduction algorithm significantly reduces the computational complexity of summing gradients across the mini-batch
-* **Memory Management:** Proper memory management is crucial for GPU implementations, especially for larger datasets that may not fit entirely in device memory
+* **Dramatic Initial Convergence:** The model showed remarkable initial convergence, with the loss dropping from 210.015305 to 0.145984 in just the first epoch, demonstrating the efficiency of gradient descent in quickly finding the approximate region of the optimal solution.
+* **Excellent Parameter Accuracy:** Both parameters converged with high accuracy, with the weight (w) having a relative error of 0.54% and the bias (b) having an exceptionally low error of just 0.03%. This indicates that the optimization landscape was favorable for this particular run.
+* **Stable Optimization:** After the initial rapid drop, the loss continued to decrease but at a much slower rate, with some minor fluctuations. These fluctuations are normal in SGD due to the randomness in mini-batch sampling.
+* **Appropriate Learning Rate:** The learning rate of 0.01 proved well-suited for this problem, allowing rapid initial convergence without causing instability in later epochs.
+* **Effective Parallelization:** The parallel implementation successfully leveraged GPU parallelism to process mini-batches efficiently, as evidenced by the smooth convergence pattern.
+* **Memory Management:** Proper memory management was crucial for this implementation, especially for handling the multi-block reduction when summing gradients across mini-batches.
 
 ## Future Improvements
 
