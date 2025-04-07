@@ -50,6 +50,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 26  | 2025-04-04 | Kernel Density Estimation (KDE) | [Link](./day026/) |
 | 27  | 2025-04-05 | Mirror Descent (STE) for Quantization | [Link](./day027/) |
 | 28  | 2025-04-06 | Mini-Batch SGD for Linear Regression | [Link](./day028/) |
+| 29  | 2025-04-07 | K-Means Assignment Step (File Input) | [Link](./day029/) |
 
 ## Rules
 
