@@ -170,10 +170,3 @@ Example:
 ## Output File Format (`--output`)
 
 If an output file is specified, it will contain the 0-based index of the cluster assigned to each point, one index per line, corresponding to the order of points in the input.
-
-Example:
-```
-3
-3
-1
-...
