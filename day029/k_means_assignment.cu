@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
     // --- Argument Parsing ---
     const struct option long_options[] = {
         {"clusters", required_argument, nullptr, 'k'},
-        {"mode", optional_argument, nullptr, 'm'},
+        {"mode", required_argument, nullptr, 'm'}, // Changed to required_argument
         {"points", required_argument, nullptr, 'p'},
         {"input", required_argument, nullptr, 'i'},
         {"output", optional_argument, nullptr, 'o'},
@@ -86,10 +86,11 @@ int main(int argc, char* argv[]) {
 
     int opt;
     int long_index = 0;
-    while ((opt = getopt_long(argc, argv, "k:m::p:i:o::h", long_options, &long_index)) != -1) {
+    // Changed "m::" to "m:" in the short options string
+    while ((opt = getopt_long(argc, argv, "k:m:p:i:o::h", long_options, &long_index)) != -1) {
         switch (opt) {
             case 'k': num_clusters = std::stoi(optarg); break;
-            case 'm': mode = (optarg ? optarg : "synthetic"); break; // Handle optional argument
+            case 'm': mode = optarg; break; // Argument is now required
             case 'p': num_points_synthetic = std::stoi(optarg); break;
             case 'i': input_filepath = optarg; break;
             case 'o': output_filepath = (optarg ? optarg : "assignments_output.txt"); break; // Handle optional argument
@@ -272,7 +273,7 @@ void print_usage(const char* prog_name) {
     std::cerr << "Usage: " << prog_name << " --clusters <K> [options]" << std::endl;
     std::cerr << "Options:" << std::endl;
     std::cerr << "  -k, --clusters <K>    (Required) Number of clusters (centroids)." << std::endl;
-    std::cerr << "  -m, --mode [mode]     (Optional) 'synthetic' (default) or 'file'." << std::endl;
+    std::cerr << "  -m, --mode <mode>     (Optional) 'synthetic' or 'file'. Defaults to 'synthetic' if omitted." << std::endl; // Updated help text
     std::cerr << "  -p, --points <N>      (Required if mode=synthetic) Number of synthetic points." << std::endl;
     std::cerr << "  -i, --input <path>    (Required if mode=file) Path to input data file (X Y per line)." << std::endl;
     std::cerr << "  -o, --output [path]   (Optional) Path to save assignments (default: assignments_output.txt if flag present)." << std::endl;
