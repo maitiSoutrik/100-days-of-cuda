@@ -16,7 +16,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra")
 add_executable(k_means_assignment k_means_assignment.cu)
 
 # Link CUDA runtime and math library
-target_link_libraries(k_means_assignment PRIVATE CUDA::cudart m)
+target_link_libraries(k_means_assignment PRIVATE ${CUDA_LIBRARIES} m)
 
 # Set executable output directory relative to build root
 set_target_properties(k_means_assignment PROPERTIES
