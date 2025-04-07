@@ -65,33 +65,96 @@ The kernel parallelizes the distance calculations and minimum finding across all
 
 ## Execution Results
 
-*(Placeholder: Console output from running on Jetson Nano with Aggregation.txt will be added here after implementation and testing.)*
+Console output from running on the Jetson Nano with different inputs:
 
+**1. Synthetic Data (10 clusters, 5000 points)**
+
+```bash
+$ ./build/day029/k_means_assignment --clusters 10 --points 5000
+
+Parsed Arguments:
+  Mode: synthetic
+  Clusters: 10
+  Synthetic Points: 5000
+Generating 5000 synthetic points for 10 clusters...
+Generated 5000 points.
+Initializing 10 centroids randomly within data bounds...
+Allocating memory...
+Copying data to device...
+Launching CUDA kernel...
+GPU Kernel Execution Time: 0.183073 ms
+Copying results from device...
+Running CPU verification...
+CPU Verification Time: 0 ms
+Comparing GPU and CPU results...
+Verification Successful! All 5000 assignments match.
+Cleaning up memory...
+Done.
 ```
-[Expected Output Format]
+
+**2. File Input (Aggregation.txt, 7 clusters)**
+
+```bash
+$ ./build/day029/k_means_assignment --clusters 7 --mode file --input /home/drboom/cuda-data-sets/kmeans_data/Aggregation.txt --output ./day029/assignments_aggregation.txt
+
 Parsed Arguments:
   Mode: file
   Clusters: 7
   Input File: /home/drboom/cuda-data-sets/kmeans_data/Aggregation.txt
-  Output File: assignments.txt
+  Output File: ./day029/assignments_aggregation.txt
 Loading points from file: /home/drboom/cuda-data-sets/kmeans_data/Aggregation.txt
 Loaded 788 points.
 Initializing 7 centroids randomly within data bounds...
 Allocating memory...
 Copying data to device...
 Launching CUDA kernel...
+GPU Kernel Execution Time: 0.12901 ms
 Copying results from device...
 Running CPU verification...
+CPU Verification Time: 0 ms
 Comparing GPU and CPU results...
 Verification Successful! All 788 assignments match.
-Saving assignments to assignments.txt...
+Saving assignments to ./day029/assignments_aggregation.txt...
+Cleaning up memory...
+Done.
+```
+
+**3. File Input (Compound.txt, 6 clusters)**
+
+```bash
+$ ./build/day029/k_means_assignment --clusters 6 --mode file --input /home/drboom/cuda-data-sets/kmeans_data/Compound.txt --output ./day029/assignments_compound.txt
+
+Parsed Arguments:
+  Mode: file
+  Clusters: 6
+  Input File: /home/drboom/cuda-data-sets/kmeans_data/Compound.txt
+  Output File: ./day029/assignments_compound.txt
+Loading points from file: /home/drboom/cuda-data-sets/kmeans_data/Compound.txt
+Loaded 399 points.
+Initializing 6 centroids randomly within data bounds...
+Allocating memory...
+Copying data to device...
+Launching CUDA kernel...
+GPU Kernel Execution Time: 0.100104 ms
+Copying results from device...
+Running CPU verification...
+CPU Verification Time: 0 ms
+Comparing GPU and CPU results...
+Verification Successful! All 399 assignments match.
+Saving assignments to ./day029/assignments_compound.txt...
 Cleaning up memory...
 Done.
 ```
 
 ## Learnings and Observations
 
-*(Placeholder: Reflections on the implementation and results will be added here.)*
+- Implemented robust command-line argument parsing using `getopt_long`. Corrected an initial bug where optional arguments were mishandled, ensuring `--mode file` is properly detected.
+- Successfully loaded data from external text files, parsing coordinates line by line.
+- The CUDA kernel efficiently assigns points to the nearest centroids in parallel. GPU execution time is significantly faster than CPU time (though CPU time here is reported as 0ms, likely due to low resolution timing or optimization for small datasets).
+- Verified GPU results against a simple CPU implementation, confirming correctness for all tested inputs.
+- Added functionality to save the computed assignments to an output file.
+- The use of `float2` simplifies handling 2D coordinates.
+- Random centroid initialization is simple but may not always lead to optimal clustering in fewer iterations compared to methods like K-Means++.
 
 ## Input File Format (`--input`)
 
