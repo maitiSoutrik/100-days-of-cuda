@@ -86,24 +86,118 @@ The program will print log messages to the console for each processed frame.
 
 ## Execution Results / Output
 
-The program will output lines similar to the following for each frame processed:
+The program will output lines similar to the following (actual output from Jetson Nano):
 
 ```
-Using camera index: 0
-Camera opened successfully. Frame dimensions: 640 x 480 (307200 pixels)
+[ WARN:0@0.862] global cap_gstreamer.cpp:1728 open OpenCV | GStreamer warning: Cannot query video position: status=0, value=-1, duration=-1
+Camera opened successfully. Frame dimensions: 1280 x 720 (921600 pixels)
 Starting frame capture and processing for 100 frames...
-Frame: 0, Timestamp_ms: 1744208515123, Avg Intensity: 115.3421, Frame Time: 15.83 ms
-Frame: 1, Timestamp_ms: 1744208515145, Avg Intensity: 115.8876, Frame Time: 14.99 ms
-Frame: 2, Timestamp_ms: 1744208515168, Avg Intensity: 116.1010, Frame Time: 15.20 ms
-...
-Frame: 98, Timestamp_ms: 1744208517450, Avg Intensity: 114.9855, Frame Time: 16.01 ms
-Frame: 99, Timestamp_ms: 1744208517472, Avg Intensity: 115.0032, Frame Time: 15.75 ms
+Frame: 0, Timestamp_ms: 1744151153810, Avg Intensity: 133.5533, Frame Time: 21.71 ms
+Frame: 1, Timestamp_ms: 1744151153884, Avg Intensity: 130.6042, Frame Time: 73.68 ms
+Frame: 2, Timestamp_ms: 1744151153984, Avg Intensity: 130.6792, Frame Time: 100.43 ms
+Frame: 3, Timestamp_ms: 1744151154082, Avg Intensity: 130.7072, Frame Time: 98.12 ms
+Frame: 4, Timestamp_ms: 1744151154183, Avg Intensity: 127.5448, Frame Time: 100.51 ms
+Frame: 5, Timestamp_ms: 1744151154288, Avg Intensity: 127.5394, Frame Time: 105.16 ms
+Frame: 6, Timestamp_ms: 1744151154385, Avg Intensity: 127.5250, Frame Time: 96.51 ms
+Frame: 7, Timestamp_ms: 1744151154489, Avg Intensity: 127.5336, Frame Time: 104.23 ms
+Frame: 8, Timestamp_ms: 1744151154583, Avg Intensity: 127.5530, Frame Time: 93.95 ms
+Frame: 9, Timestamp_ms: 1744151154679, Avg Intensity: 127.5513, Frame Time: 95.79 ms
+Frame: 10, Timestamp_ms: 1744151154784, Avg Intensity: 127.5546, Frame Time: 105.05 ms
+Frame: 11, Timestamp_ms: 1744151154880, Avg Intensity: 127.5777, Frame Time: 95.68 ms
+Frame: 12, Timestamp_ms: 1744151154984, Avg Intensity: 127.5855, Frame Time: 104.60 ms
+Frame: 13, Timestamp_ms: 1744151155079, Avg Intensity: 127.6000, Frame Time: 94.88 ms
+Frame: 14, Timestamp_ms: 1744151155181, Avg Intensity: 127.6019, Frame Time: 101.35 ms
+Frame: 15, Timestamp_ms: 1744151155283, Avg Intensity: 127.6048, Frame Time: 102.15 ms
+Frame: 16, Timestamp_ms: 1744151155382, Avg Intensity: 127.5995, Frame Time: 98.56 ms
+Frame: 17, Timestamp_ms: 1744151155486, Avg Intensity: 127.6131, Frame Time: 104.28 ms
+Frame: 18, Timestamp_ms: 1744151155582, Avg Intensity: 127.6262, Frame Time: 96.16 ms
+Frame: 19, Timestamp_ms: 1744151155688, Avg Intensity: 127.6291, Frame Time: 105.75 ms
+Frame: 20, Timestamp_ms: 1744151155787, Avg Intensity: 127.6460, Frame Time: 99.02 ms
+Frame: 21, Timestamp_ms: 1744151155884, Avg Intensity: 127.6516, Frame Time: 96.78 ms
+Frame: 22, Timestamp_ms: 1744151155986, Avg Intensity: 127.6542, Frame Time: 101.88 ms
+Frame: 23, Timestamp_ms: 1744151156087, Avg Intensity: 127.6568, Frame Time: 101.65 ms
+Frame: 24, Timestamp_ms: 1744151156187, Avg Intensity: 127.6726, Frame Time: 99.57 ms
+Frame: 25, Timestamp_ms: 1744151156285, Avg Intensity: 127.6540, Frame Time: 98.25 ms
+Frame: 26, Timestamp_ms: 1744151156384, Avg Intensity: 127.6548, Frame Time: 99.04 ms
+Frame: 27, Timestamp_ms: 1744151156484, Avg Intensity: 127.6675, Frame Time: 99.35 ms
+Frame: 28, Timestamp_ms: 1744151156585, Avg Intensity: 127.6866, Frame Time: 101.09 ms
+Frame: 29, Timestamp_ms: 1744151156684, Avg Intensity: 127.6925, Frame Time: 98.82 ms
+Frame: 30, Timestamp_ms: 1744151156784, Avg Intensity: 127.6973, Frame Time: 99.65 ms
+Frame: 31, Timestamp_ms: 1744151156884, Avg Intensity: 127.7044, Frame Time: 100.15 ms
+Frame: 32, Timestamp_ms: 1744151156980, Avg Intensity: 127.7237, Frame Time: 96.41 ms
+Frame: 33, Timestamp_ms: 1744151157084, Avg Intensity: 127.7332, Frame Time: 103.69 ms
+Frame: 34, Timestamp_ms: 1744151157181, Avg Intensity: 127.7304, Frame Time: 96.85 ms
+Frame: 35, Timestamp_ms: 1744151157285, Avg Intensity: 127.7373, Frame Time: 103.84 ms
+Frame: 36, Timestamp_ms: 1744151157383, Avg Intensity: 127.7487, Frame Time: 98.17 ms
+Frame: 37, Timestamp_ms: 1744151157487, Avg Intensity: 127.7693, Frame Time: 103.84 ms
+Frame: 38, Timestamp_ms: 1744151157583, Avg Intensity: 127.7728, Frame Time: 96.20 ms
+Frame: 39, Timestamp_ms: 1744151157684, Avg Intensity: 127.7943, Frame Time: 101.16 ms
+Frame: 40, Timestamp_ms: 1744151157784, Avg Intensity: 127.8206, Frame Time: 99.63 ms
+Frame: 41, Timestamp_ms: 1744151157884, Avg Intensity: 127.8262, Frame Time: 99.85 ms
+Frame: 42, Timestamp_ms: 1744151157982, Avg Intensity: 127.8493, Frame Time: 97.75 ms
+Frame: 43, Timestamp_ms: 1744151158089, Avg Intensity: 127.8519, Frame Time: 106.98 ms
+Frame: 44, Timestamp_ms: 1744151158189, Avg Intensity: 127.8548, Frame Time: 100.46 ms
+Frame: 45, Timestamp_ms: 1744151158284, Avg Intensity: 127.8716, Frame Time: 95.10 ms
+Frame: 46, Timestamp_ms: 1744151158396, Avg Intensity: 127.8868, Frame Time: 111.64 ms
+Frame: 47, Timestamp_ms: 1744151158485, Avg Intensity: 127.8990, Frame Time: 88.66 ms
+Frame: 48, Timestamp_ms: 1744151158584, Avg Intensity: 127.9302, Frame Time: 99.13 ms
+Frame: 49, Timestamp_ms: 1744151158684, Avg Intensity: 127.9442, Frame Time: 99.51 ms
+Frame: 50, Timestamp_ms: 1744151158782, Avg Intensity: 127.9378, Frame Time: 97.91 ms
+Frame: 51, Timestamp_ms: 1744151158883, Avg Intensity: 127.9671, Frame Time: 100.79 ms
+Frame: 52, Timestamp_ms: 1744151158980, Avg Intensity: 127.9718, Frame Time: 97.88 ms
+Frame: 53, Timestamp_ms: 1744151159084, Avg Intensity: 127.9897, Frame Time: 103.04 ms
+Frame: 54, Timestamp_ms: 1744151159185, Avg Intensity: 128.0068, Frame Time: 101.11 ms
+Frame: 55, Timestamp_ms: 1744151159284, Avg Intensity: 128.0310, Frame Time: 98.79 ms
+Frame: 56, Timestamp_ms: 1744151159385, Avg Intensity: 128.0496, Frame Time: 100.93 ms
+Frame: 57, Timestamp_ms: 1744151159489, Avg Intensity: 128.0725, Frame Time: 104.08 ms
+Frame: 58, Timestamp_ms: 1744151159587, Avg Intensity: 128.0851, Frame Time: 98.22 ms
+Frame: 59, Timestamp_ms: 1744151159684, Avg Intensity: 128.1121, Frame Time: 96.66 ms
+Frame: 60, Timestamp_ms: 1744151159786, Avg Intensity: 128.1357, Frame Time: 101.92 ms
+Frame: 61, Timestamp_ms: 1744151159889, Avg Intensity: 128.1308, Frame Time: 103.55 ms
+Frame: 62, Timestamp_ms: 1744151159979, Avg Intensity: 128.1515, Frame Time: 90.07 ms
+Frame: 63, Timestamp_ms: 1744151160085, Avg Intensity: 128.1821, Frame Time: 105.61 ms
+Frame: 64, Timestamp_ms: 1744151160185, Avg Intensity: 128.1965, Frame Time: 99.73 ms
+Frame: 65, Timestamp_ms: 1744151160286, Avg Intensity: 128.2035, Frame Time: 100.86 ms
+Frame: 66, Timestamp_ms: 1744151160384, Avg Intensity: 128.2242, Frame Time: 97.85 ms
+Frame: 67, Timestamp_ms: 1744151160486, Avg Intensity: 128.2471, Frame Time: 102.29 ms
+Frame: 68, Timestamp_ms: 1744151160586, Avg Intensity: 128.2398, Frame Time: 100.07 ms
+Frame: 69, Timestamp_ms: 1744151160684, Avg Intensity: 128.2611, Frame Time: 98.35 ms
+Frame: 70, Timestamp_ms: 1744151160786, Avg Intensity: 128.2634, Frame Time: 101.36 ms
+Frame: 71, Timestamp_ms: 1744151160886, Avg Intensity: 128.2599, Frame Time: 100.35 ms
+Frame: 72, Timestamp_ms: 1744151160979, Avg Intensity: 128.2845, Frame Time: 92.99 ms
+Frame: 73, Timestamp_ms: 1744151161080, Avg Intensity: 128.2808, Frame Time: 100.37 ms
+Frame: 74, Timestamp_ms: 1744151161188, Avg Intensity: 128.2798, Frame Time: 108.24 ms
+Frame: 75, Timestamp_ms: 1744151161284, Avg Intensity: 128.2800, Frame Time: 95.77 ms
+Frame: 76, Timestamp_ms: 1744151161381, Avg Intensity: 128.2602, Frame Time: 97.42 ms
+Frame: 77, Timestamp_ms: 1744151161482, Avg Intensity: 128.2719, Frame Time: 100.45 ms
+Frame: 78, Timestamp_ms: 1744151161589, Avg Intensity: 128.2678, Frame Time: 106.88 ms
+Frame: 79, Timestamp_ms: 1744151161684, Avg Intensity: 128.2690, Frame Time: 95.06 ms
+Frame: 80, Timestamp_ms: 1744151161784, Avg Intensity: 128.2690, Frame Time: 99.78 ms
+Frame: 81, Timestamp_ms: 1744151161890, Avg Intensity: 128.2617, Frame Time: 105.84 ms
+Frame: 82, Timestamp_ms: 1744151161989, Avg Intensity: 128.2587, Frame Time: 99.73 ms
+Frame: 83, Timestamp_ms: 1744151162090, Avg Intensity: 128.2712, Frame Time: 100.92 ms
+Frame: 84, Timestamp_ms: 1744151162187, Avg Intensity: 128.2791, Frame Time: 96.62 ms
+Frame: 85, Timestamp_ms: 1744151162289, Avg Intensity: 128.2802, Frame Time: 101.45 ms
+Frame: 86, Timestamp_ms: 1744151162388, Avg Intensity: 128.2834, Frame Time: 99.21 ms
+Frame: 87, Timestamp_ms: 1744151162487, Avg Intensity: 128.2915, Frame Time: 99.52 ms
+Frame: 88, Timestamp_ms: 1744151162584, Avg Intensity: 128.2799, Frame Time: 96.82 ms
+Frame: 89, Timestamp_ms: 1744151162684, Avg Intensity: 128.2754, Frame Time: 100.06 ms
+Frame: 90, Timestamp_ms: 1744151162785, Avg Intensity: 128.2706, Frame Time: 100.25 ms
+Frame: 91, Timestamp_ms: 1744151162886, Avg Intensity: 128.2751, Frame Time: 101.81 ms
+Frame: 92, Timestamp_ms: 1744151162980, Avg Intensity: 128.2827, Frame Time: 93.55 ms
+Frame: 93, Timestamp_ms: 1744151163083, Avg Intensity: 128.2795, Frame Time: 103.22 ms
+Frame: 94, Timestamp_ms: 1744151163186, Avg Intensity: 128.2670, Frame Time: 102.19 ms
+Frame: 95, Timestamp_ms: 1744151163287, Avg Intensity: 128.2693, Frame Time: 101.38 ms
+Frame: 96, Timestamp_ms: 1744151163388, Avg Intensity: 128.2723, Frame Time: 100.93 ms
+Frame: 97, Timestamp_ms: 1744151163484, Avg Intensity: 128.2624, Frame Time: 96.42 ms
+Frame: 98, Timestamp_ms: 1744151163584, Avg Intensity: 128.2670, Frame Time: 99.33 ms
+Frame: 99, Timestamp_ms: 1744151163682, Avg Intensity: 128.2667, Frame Time: 98.39 ms
 Processing complete.
 Releasing camera and freeing memory...
 Cleanup complete.
 ```
 
-*(Note: Exact timestamps, average intensity values, and frame times will vary based on lighting conditions, camera, and system load.)*
+*(Note: The GStreamer warning is common and often doesn't affect functionality. Frame times will vary based on system load and specific camera/Jetson performance.)*
 
 ## Learnings and Observations
 
