@@ -51,6 +51,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 27  | 2025-04-05 | Mirror Descent (STE) for Quantization | [Link](./day027/) |
 | 28  | 2025-04-06 | Mini-Batch SGD for Linear Regression | [Link](./day028/) |
 | 29  | 2025-04-07 | K-Means Assignment Step (File Input) | [Link](./day029/) |
+| 30  | 2025-04-08 | Headless Camera Processing (Grayscale + Avg Intensity) | [Link](./day030/) |
 
 ## Rules
 
