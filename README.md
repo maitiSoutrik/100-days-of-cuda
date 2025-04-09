@@ -52,6 +52,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 28  | 2025-04-06 | Mini-Batch SGD for Linear Regression | [Link](./day028/) |
 | 29  | 2025-04-07 | K-Means Assignment Step (File Input) | [Link](./day029/) |
 | 30  | 2025-04-08 | Headless Camera Processing (Grayscale + Avg Intensity) | [Link](./day030/) |
+| 31  | 2025-04-09 | 2D Heat Simulation (Basic vs Shared Memory) | [Link](./day031/) |
 
 ## Rules
 
