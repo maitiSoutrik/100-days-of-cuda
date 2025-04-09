@@ -63,17 +63,21 @@ jobs:
           # Build and run all days' code
           echo "Building and running all days..."
 
-          # First, build all projects
-          echo "Building all projects..."
+          # Temporarily build only day030
+          echo "Building ONLY day030 target..."
           cd "${BUILD_DIR}"
-          cmake --build .
+          cmake --build . --target day030_camera_intensity
 
-          # Get all day directories
-          DAY_DIRS=$(ls -d ${REPO_DIR}/day* | sort -V)
+          # Temporarily disable looping through all days and focus on day030
+          # # Get all day directories
+          # DAY_DIRS=$(ls -d ${REPO_DIR}/day* | sort -V)
+          #
+          # # Process each day directory
+          # for DAY in $DAY_DIRS; do
+          #   DAY_NAME=$(basename "${DAY}")
 
-          # Process each day directory
-          for DAY in $DAY_DIRS; do
-            DAY_NAME=$(basename "${DAY}")
+          # --- Start Temporary day030 specific processing ---
+          DAY_NAME="day030"
             BUILD_DAY_DIR="${BUILD_DIR}/${DAY_NAME}"
 
             # Check if the build directory exists
@@ -126,6 +130,44 @@ jobs:
                   sleep 5 # Reduced sleep after specific runs
 
                   continue # Skip the default logging/preview below for this special case
+                elif [[ "${EXEC_NAME}" == "camera_avg_intensity" ]]; then
+                  # Add diagnostics specifically for camera access issues in CI
+                  echo ">>> Running diagnostics for camera_avg_intensity..."
+                  echo ">>> Checking /dev/video0 permissions:"
+                  ls -l /dev/video0 || echo "/dev/video0 not found or error listing!"
+                  echo ">>> Checking current user and groups:"
+                  id || echo "Could not run id command"
+                  echo ">>> Attempting frame capture with fswebcam (requires 'sudo apt-get install fswebcam' on Jetson):"
+                  if command -v fswebcam &> /dev/null; then
+                    fswebcam -d /dev/video0 --no-banner --save /tmp/ci_test_frame.jpg -r 640x480 --jpeg 85 || echo "fswebcam command failed!"
+                    if [ -f /tmp/ci_test_frame.jpg ]; then
+                       echo "fswebcam successfully created /tmp/ci_test_frame.jpg (deleting test file)"
+                       rm /tmp/ci_test_frame.jpg
+                    else
+                       echo "fswebcam did not create the file."
+                    fi
+                  else
+                    echo "fswebcam command not found. Skipping fswebcam test."
+                  fi
+                  echo ">>> End diagnostics for camera_avg_intensity."
+
+                  # Now run the actual executable
+                  echo "Running ${EXEC_NAME} (default)..."
+                  LOG_FILE="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}.log"
+                  # Run and explicitly capture exit code
+                  set +e # Disable exit on error temporarily
+                  ${EXEC} > "${LOG_FILE}" 2>&1
+                  EXIT_CODE=$?
+                  set -e # Re-enable exit on error
+                  echo "Exit code: ${EXIT_CODE}" >> "${LOG_FILE}" # Log exit code
+                  # Check exit code and add specific error message if 255
+                  if [ $EXIT_CODE -eq 255 ]; then
+                    echo "ERROR: camera_avg_intensity likely failed to open camera (exit code 255)." >> "${LOG_FILE}"
+                    echo "ERROR: camera_avg_intensity likely failed to open camera (exit code 255)." # Also print to CI log
+                    # Optional: Consider failing the step if camera fails: exit 1
+                  fi
+                  sleep 5 # Reduced sleep is likely sufficient
+
                 else
                   # Default run for other executables
                   echo "Running ${EXEC_NAME} (default)..."
@@ -134,7 +176,7 @@ jobs:
                   sleep 15 # Keep longer sleep for potentially longer default runs
                 fi
 
-                # Print the first few lines of output (for non-k_means cases)
+                # Print the first few lines of output (for non-special cases)
                 echo "Output preview (see ${LOG_FILE} for full output):"
                 head -n 20 "${LOG_FILE}"
                 echo ""
@@ -147,10 +189,12 @@ jobs:
             else
               echo "Skipping ${DAY_NAME} - no build directory found"
             fi
-          done
+          # done # End of original loop
 
-          echo "Deployment complete! All binaries have been built and run."
-          echo "Logs are available in ${LOGS_DIR}"
+          # --- End Temporary day030 specific processing ---
+
+          echo "Temporary Run Complete (Focused on Day 30)! Check logs."
+          echo "Logs for day030 should be in ${LOGS_DIR}"
           EOL
 
           # Copy and execute the deployment script on the Jetson Nano
