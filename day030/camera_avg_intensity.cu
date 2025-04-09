@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <opencv2/opencv.hpp>
+#include <opencv2/videoio.hpp> // Required for CAP_V4L2
 #include <chrono>
 #include <unistd.h> // For usleep
 
@@ -79,10 +80,20 @@ int main(int argc, char *argv[]) {
 
 
     // --- Camera Initialization ---
-    cv::VideoCapture cap(camera_index);
+    // Explicitly request the V4L2 backend, which might be more robust in CI environments
+    cv::VideoCapture cap(camera_index, cv::CAP_V4L2);
     if (!cap.isOpened()) {
-        fprintf(stderr, "Error: Could not open camera with index %d\n", camera_index);
-        return -1;
+        fprintf(stderr, "Error: Could not open camera with index %d using cv::CAP_V4L2 backend.\n", camera_index);
+        fprintf(stderr, "Attempting again without explicit backend...\n");
+        cap.open(camera_index); // Try default backend as a fallback
+        if (!cap.isOpened()) {
+             fprintf(stderr, "Error: Could not open camera with index %d using default backend either.\n", camera_index);
+             fprintf(stderr, "Check camera connection, permissions (user in 'video' group?), and ensure no other process is using the camera.\n");
+            return -1; // Exit code 255
+        }
+         fprintf(stderr, "Warning: Opened camera with default backend after V4L2 failed.\n");
+    } else {
+         printf("Camera opened successfully using cv::CAP_V4L2 backend.\n");
     }
 
     int width = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
@@ -93,7 +104,8 @@ int main(int argc, char *argv[]) {
          return -1;
     }
     int num_pixels = width * height;
-    printf("Camera opened successfully. Frame dimensions: %d x %d (%d pixels)\n", width, height, num_pixels);
+    // printf("Camera opened successfully. Frame dimensions: %d x %d (%d pixels)\n", width, height, num_pixels); // Moved message after successful open
+    printf("Frame dimensions: %d x %d (%d pixels)\n", width, height, num_pixels);
 
 
     // --- Memory Allocation ---
