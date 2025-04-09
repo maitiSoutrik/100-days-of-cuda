@@ -66,7 +66,7 @@ jobs:
           # Temporarily build only day030
           echo "Building ONLY day030 target..."
           cd "${BUILD_DIR}"
-          cmake --build . --target day030_camera_intensity
+          cmake --build . --target camera_avg_intensity # Corrected target name
 
           # Temporarily disable looping through all days and focus on day030
           # # Get all day directories
