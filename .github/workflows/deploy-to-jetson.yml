@@ -72,7 +72,7 @@ jobs:
           # # Get all day directories
           # DAY_DIRS=$(ls -d ${REPO_DIR}/day* | sort -V)
 
-          # Run only day031
+          # Run only day031, testing both basic and shared memory versions
           echo "\n===== Processing day031 =====\n"
           DAY_NAME="day031"
           BUILD_DAY_DIR="${BUILD_DIR}/${DAY_NAME}"
@@ -80,12 +80,23 @@ jobs:
           EXEC_PATH="${BUILD_DAY_DIR}/${EXEC_NAME}"
 
           if [ -x "${EXEC_PATH}" ]; then
-              echo "Running ${EXEC_NAME}..."
-              LOG_FILE="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}.log"
-              "${EXEC_PATH}" > "${LOG_FILE}" 2>&1
-              echo "Output preview (see ${LOG_FILE} for full output):"
-              head -n 20 "${LOG_FILE}"
+              # Run 1: Basic Kernel (no arguments)
+              echo "Running ${EXEC_NAME} (basic kernel)..."
+              LOG_FILE_BASIC="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}_basic.log"
+              "${EXEC_PATH}" > "${LOG_FILE_BASIC}" 2>&1
+              echo "Output preview (basic) (see ${LOG_FILE_BASIC} for full output):"
+              head -n 20 "${LOG_FILE_BASIC}"
               echo ""
+              sleep 5 # Add a short sleep between runs
+
+              # Run 2: Shared Memory Kernel ('shared' argument)
+              echo "Running ${EXEC_NAME} (shared memory kernel)..."
+              LOG_FILE_SHARED="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}_shared.log"
+              "${EXEC_PATH}" shared > "${LOG_FILE_SHARED}" 2>&1
+              echo "Output preview (shared) (see ${LOG_FILE_SHARED} for full output):"
+              head -n 20 "${LOG_FILE_SHARED}"
+              echo ""
+
           else
               echo "Executable ${EXEC_PATH} not found or not executable."
               exit 1 # Fail the job if the specific executable isn't found
