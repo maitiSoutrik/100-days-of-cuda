@@ -20,4 +20,4 @@ set(CMAKE_CUDA_STANDARD 11)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 # Link CUDA runtime library
-target_link_libraries(stream_overlap PRIVATE CUDA::cudart)
+target_link_libraries(stream_overlap PRIVATE ${CUDA_LIBRARIES})
