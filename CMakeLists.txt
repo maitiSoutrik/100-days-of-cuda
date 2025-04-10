@@ -67,5 +67,6 @@ add_subdirectory(day028)
 add_subdirectory(day029)
 add_subdirectory(day030)
 add_subdirectory(day031)
+add_subdirectory(day032)
 # Add a badge for each completed day to README.md
 # etc.
