@@ -12,6 +12,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Network Diagnostics
+        run: |
+          echo "--- Network Interface Configuration ---"
+          ip addr || ifconfig || echo "ip/ifconfig command not found"
+          echo "--- Routing Table ---"
+          ip route || netstat -rn || echo "ip route/netstat command not found"
+          echo "--- Pinging Jetson Nano (192.168.1.184) ---"
+          ping -c 4 192.168.1.184 || echo "Ping failed or command not found"
+          echo "--- End Network Diagnostics ---"
+        shell: bash
+
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
