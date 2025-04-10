@@ -205,7 +205,8 @@ int main(int argc, char **argv) {
     CHECK_CUDA_ERROR(cudaEventRecord(event_d2h_done, stream_d2h));
 
     // Record stop time for the entire async sequence (after last operation scheduled)
-    CHECK_CUDA_ERROR(cudaEventRecord(async_stop, event_d2h_done)); // Record stop after D2H event is complete
+    // Record this event in the stream where the *last* operation (D2H copy) was issued.
+    CHECK_CUDA_ERROR(cudaEventRecord(async_stop, stream_d2h)); 
 
     // 4. Synchronize host with the final D2H completion event
     printf("Waiting for asynchronous operations to complete...\n");
