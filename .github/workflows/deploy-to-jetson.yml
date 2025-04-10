@@ -25,12 +25,16 @@ jobs:
 
       - name: Setup SSH key
         run: |
+          echo "--- Setting up SSH Key ---"
           mkdir -p ~/.ssh
           echo "${{ secrets.JETSON_SSH_KEY }}" > ~/.ssh/jetson_ci_key_nopass
           chmod 600 ~/.ssh/jetson_ci_key_nopass
-          ssh-keyscan -H 192.168.1.184 >> ~/.ssh/known_hosts
-          # Test SSH connection
-          ssh -i ~/.ssh/jetson_ci_key_nopass -o StrictHostKeyChecking=no -o BatchMode=yes drboom@192.168.1.184 echo "SSH connection successful" || { echo "SSH connection failed"; exit 1; }
+          # Temporarily removed ssh-keyscan for debugging
+          # ssh-keyscan -H 192.168.1.184 >> ~/.ssh/known_hosts 
+          echo "--- Attempting SSH Connection (Verbose) ---"
+          # Test SSH connection with verbose output
+          ssh -v -i ~/.ssh/jetson_ci_key_nopass -o StrictHostKeyChecking=no -o BatchMode=yes drboom@192.168.1.184 echo "SSH connection successful" || { echo "SSH connection failed"; exit 1; }
+          echo "--- SSH Setup Step Complete ---"
           
 
 
