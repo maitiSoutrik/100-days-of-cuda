@@ -74,14 +74,45 @@ The implementation involves the following steps:
 
 ## Execution Results
 
-*(Placeholder: Add actual console output after running on Jetson Nano)*
+The following output was obtained by running the code on the Jetson Nano with 1024x1024 matrices:
+
 ```
-[Execution Output Will Go Here]
+./day032/stream_overlap 1024 1024
+Using provided dimensions: m=1024, n=1024, p=1024
+Matrix dimensions: A(1024x1024) * B(1024x1024) = C(1024x1024)
+Total memory: A=4.00 MB, B=4.00 MB, C=4.00 MB
+
+----- CPU Execution -----
+CPU execution time: 50460.469 ms
+
+----- GPU Execution (Synchronous) -----
+Synchronous GPU total time (H2D + Kernel + D2H): 543.324 ms
+Synchronous GPU verification: PASSED
+
+----- GPU Execution (Asynchronous with Streams) -----
+Waiting for asynchronous operations to complete...
+Asynchronous operations completed.
+Asynchronous GPU total time (Overlapped H2D/Kernel/D2H): 178.138 ms
+Asynchronous GPU verification: PASSED
+
+----- Performance Summary -----
+CPU Time:                 50460.469 ms
+GPU Time (Synchronous):   543.324 ms
+GPU Time (Asynchronous):  178.138 ms
+Async Speedup vs Sync:    3.05x
+Async Speedup vs CPU:     283.27x
+
+Day 32 Stream Overlap demo finished successfully!
 ```
 
 ## Learnings and Observations
 
-*(Placeholder: Add observations about performance gains, implementation challenges, etc.)*
+-   **Significant Performance Gain:** Using asynchronous operations with streams provided a substantial performance improvement. The total time for the asynchronous GPU version (178.1 ms) was approximately **3.05 times faster** than the synchronous GPU version (543.3 ms) for 1024x1024 matrices.
+-   **Latency Hiding:** This speedup clearly demonstrates the benefit of overlapping memory transfers (H2D and D2H) with kernel execution. By using separate streams and synchronizing with events, the GPU could perform computations while data was still being transferred, effectively hiding much of the memory transfer latency.
+-   **Pinned Memory Importance:** The use of pinned host memory (`cudaMallocHost`) was crucial for enabling true asynchronous memory copies, which is a prerequisite for achieving effective overlap.
+-   **Implementation Complexity:** While powerful, implementing stream overlap requires careful management of streams, events, and dependencies (`cudaStreamWaitEvent`). Errors in synchronization logic (like the one corrected during development) can lead to incorrect results or deadlocks.
+-   **Hardware Dependency:** The degree of overlap achievable depends on the specific GPU architecture's ability to perform copies and computations concurrently (number of Copy Engines vs. Compute Engines). The Jetson Nano seems capable of achieving significant overlap for this workload.
+-   **Verification:** Both synchronous and asynchronous GPU implementations produced results consistent with the CPU version, confirming the correctness of the stream-based approach.
 
 ## References
 
