@@ -60,37 +60,60 @@ cd build/day033
 ./reduction_warp_shfl 1000000
 ```
 
-## Execution Results (Placeholder)
+## Execution Results
 
-The output will show the time taken for the CPU sum and both GPU reduction methods, along with verification status.
+The following output was obtained by running the code on the Jetson Nano:
 
-*(Paste the actual console output from running `./build/day033/reduction_warp_shfl` on the Jetson Nano here after building and running)*
-
+**Large Dataset (16,777,216 elements):**
 ```text
-[Expected Output Format]
+./day033/reduction_warp_shfl
 Performing parallel reduction sum on 16777216 float elements
 
 --- CPU Computation ---
-CPU Sum: [SUM_VALUE], Time: [CPU_TIME] ms
+CPU Sum: 91435760.0, Time: 57.267010 ms
 
 --- GPU Computations ---
-GPU Config: BlockSize = 256, NumBlocks = [NUM_BLOCKS]
-GPU Kernel (Shared Memory): Sum = [GPU_SHARED_SUM], Time: [GPU_SHARED_TIME] ms
-GPU Kernel (Warp Shuffle): Sum = [GPU_WARP_SUM], Time: [GPU_WARP_TIME] ms
+GPU Config: BlockSize = 256, NumBlocks = 32768
+GPU Kernel (Shared Memory): Sum = 91435760.0, Time: 49.820522 ms
+GPU Kernel (Warp Shuffle): Sum = 91435760.0, Time: 18.914270 ms
 
 --- Verification ---
-Shared Memory GPU vs CPU: PASSED (CPU=[SUM_VALUE], GPU=[GPU_SHARED_SUM], Diff=[DIFF], Tol=[TOL])
-Warp Shuffle GPU vs CPU: PASSED (CPU=[SUM_VALUE], GPU=[GPU_WARP_SUM], Diff=[DIFF], Tol=[TOL])
+Shared Memory GPU vs CPU: PASSED (CPU=91435760.0, GPU=91435760.0, Diff=0.000000e+00, Tol=9.143576e+02)
+Warp Shuffle GPU vs CPU: PASSED (CPU=91435760.0, GPU=91435760.0, Diff=0.000000e+00, Tol=9.143576e+02)
 ```
 
-## Performance Analysis (Placeholder)
+**Smaller Dataset (1,000,000 elements):**
+```text
+./day033/reduction_warp_shfl 1000000
+Performing parallel reduction sum on 1000000 float elements
 
-*(Analyze the actual results obtained on the Jetson Nano here)*
+--- CPU Computation ---
+CPU Sum: 5450000.0, Time: 3.685114 ms
 
-*   Compare the execution times of `reduceSharedMemKernel` and `reduceWarpShflKernel`.
-*   Did the warp shuffle implementation provide a speedup as expected? By how much?
-*   Discuss why the performance difference occurred (linking back to reduced sync/shared memory traffic).
-*   Compare GPU times to the CPU time. Is the GPU providing significant acceleration for this large dataset?
+--- GPU Computations ---
+GPU Config: BlockSize = 256, NumBlocks = 1954
+GPU Kernel (Shared Memory): Sum = 5450000.0, Time: 11.087292 ms
+GPU Kernel (Warp Shuffle): Sum = 5450000.0, Time: 6.711407 ms
+
+--- Verification ---
+Shared Memory GPU vs CPU: PASSED (CPU=5450000.0, GPU=5450000.0, Diff=0.000000e+00, Tol=5.450000e+01)
+Warp Shuffle GPU vs CPU: PASSED (CPU=5450000.0, GPU=5450000.0, Diff=0.000000e+00, Tol=5.450000e+01)
+```
+
+## Performance Analysis
+
+The results clearly demonstrate the effectiveness of the warp shuffle optimization on the Jetson Nano for this reduction task.
+
+*   **Warp Shuffle vs. Shared Memory:**
+    *   For the large dataset (16M elements), the warp shuffle kernel (18.9 ms) is approximately **2.63x faster** than the shared memory kernel (49.8 ms).
+    *   For the smaller dataset (1M elements), the warp shuffle kernel (6.7 ms) is approximately **1.65x faster** than the shared memory kernel (11.1 ms).
+    *   This confirms the expectation that reducing `__syncthreads()` calls and shared memory traffic by using warp shuffles for intra-warp reduction significantly improves performance. The benefit is more pronounced on the larger dataset where the reduction overhead is relatively higher.
+
+*   **GPU vs. CPU:**
+    *   **Large Dataset:** Both GPU kernels outperform the CPU (57.3 ms). The shared memory kernel offers a modest speedup (~1.15x), while the warp shuffle kernel provides a substantial **~3.03x speedup** over the CPU.
+    *   **Smaller Dataset:** Interestingly, for the 1M element dataset, the CPU (3.7 ms) is faster than both GPU kernels (Shared: 11.1 ms, Warp: 6.7 ms). This echoes the observation from Day 4: for smaller datasets or less computationally intensive tasks, the overhead of kernel launch and memory transfers can negate the benefits of GPU parallelism on a platform like the Jetson Nano.
+
+In summary, the warp shuffle optimization is highly effective, particularly for larger datasets, significantly reducing execution time compared to the traditional shared memory approach. It also enables the GPU to achieve a notable speedup over the CPU for the large dataset, unlike the simple shared memory version which was only slightly faster.
 
 ## Learnings and Observations
 
