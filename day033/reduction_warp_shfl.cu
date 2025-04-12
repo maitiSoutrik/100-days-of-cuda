@@ -163,10 +163,11 @@ float runReductionGPU(const char* kernel_name,
 
     // Determine shared memory size
     // Shared memory version needs blockDim.x floats
-    // Warp shuffle version needs blockDim.x / warpSize floats (rounded up if not multiple)
+    // Warp shuffle version needs blockDim.x / 32 floats (rounded up if not multiple)
+    // NOTE: Using literal 32 here as warpSize is not available in host code
     size_t sharedMemSize = (kernelFunc == reduceSharedMemKernel) ?
                            blockSize * sizeof(float) :
-                           ((blockSize + warpSize - 1) / warpSize) * sizeof(float);
+                           ((blockSize + 32 - 1) / 32) * sizeof(float);
 
 
     // Launch kernel and record time
@@ -246,9 +247,10 @@ int main(int argc, char *argv[]) {
     // Determine block size and number of blocks
     // Block size should ideally be a multiple of warpSize (32)
     int blockSize = 256; // Common choice, multiple of 32
-    if (blockSize % warpSize != 0 && blockSize > 0) {
+    // NOTE: Using literal 32 here as warpSize is not available in host code
+    if (blockSize % 32 != 0 && blockSize > 0) {
        // This should not happen with blockSize=256, but good practice to check
-       fprintf(stderr, "Warning: Block size %d not a multiple of warpSize (%d). Consider adjusting.\n", blockSize, warpSize);
+       fprintf(stderr, "Warning: Block size %d not a multiple of warpSize (32). Consider adjusting.\n", blockSize);
     }
 
     // Calculate numBlocks needed. The output array stores one sum per block.
