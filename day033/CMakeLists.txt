@@ -18,8 +18,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD 14)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
-# Link CUDA runtime library
-target_link_libraries(reduction_warp_shfl CUDA::cudart)
+# Link CUDA runtime library (using the variable defined by find_package(CUDA))
+target_link_libraries(reduction_warp_shfl ${CUDA_LIBRARIES})
 
-# Link math library if needed (reductions often involve math)
+# Link math library (needed for fabs, fmaxf in main)
 target_link_libraries(reduction_warp_shfl m)
