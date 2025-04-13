@@ -35,9 +35,9 @@
     -   MUST define an executable target using `add_executable` or `cuda_add_executable`. The executable name should be concise and relevant (e.g., `vector_add`, `fft_comparison`).
     -   MUST set C++ standard (e.g., `CXX_STANDARD 14` or consistent with existing files).
     -   MUST link necessary libraries:
-        -   Always link `CUDA::cudart` or `${CUDA_LIBRARIES}`.
+        -   Always link the CUDA runtime using `${CUDA_LIBRARIES}` (obtained from `find_package(CUDA REQUIRED)`). **Do not use `CUDA::cudart`** as it has shown inconsistency in this project setup.
         -   Link `m` for math functions if needed.
-        -   Link specific CUDA libraries when used (e.g., `CUDA::cublas`, `${CUDA_CUFFT_LIBRARIES}`, `${CUDA_curand_LIBRARY}`).
+        -   Link specific CUDA libraries when used, preferably using the variables provided by CMake's FindCUDA module (e.g., `${CUDA_CUFFT_LIBRARIES}`, `${CUDA_curand_LIBRARY}`) or modern targets like `CUDA::cublas` if confirmed to work reliably.
         -   Link external libraries like OpenCV (`${OpenCV_LIBS}`) when used. Handle conditional linking if OpenCV is optional.
     -   Include directories (`include_directories`) should be added if required (e.g., for OpenCV).
 
