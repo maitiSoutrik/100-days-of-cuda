@@ -12,13 +12,10 @@ set(CMAKE_CUDA_ARCHITECTURES 53)
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3")
 
 # Define the executable
-add_executable(voxel_filter voxel_grid_filter.cu)
+add_executable(voxel_filter voxel_grid_filter.cu) # Renamed target as requested
 
-# Link necessary libraries
-# Linking CUDA runtime library
-target_link_libraries(voxel_filter ${CUDA_LIBRARIES})
-# Linking math library for functions like ceilf, floorf etc.
-target_link_libraries(voxel_filter m)
+# Link necessary libraries (CUDA runtime and math)
+target_link_libraries(voxel_filter PRIVATE CUDA::cudart m) # Consolidated libraries
 
 # Optional: Add include directories if needed (e.g., for helper headers)
 # include_directories(include)
@@ -26,6 +23,7 @@ target_link_libraries(voxel_filter m)
 # Optional: Add compiler definitions if needed
 # target_compile_definitions(day034_voxel_filter PRIVATE MY_MACRO=1)
 
-# Print target file location
-get_target_property(TARGET_LOCATION voxel_filter LOCATION)
-message(STATUS "Executable target location: ${TARGET_LOCATION}")
+# The LOCATION property might not be available at configuration time.
+# Removing the debug message as it can cause issues.
+# get_target_property(TARGET_LOCATION day034_voxel_filter LOCATION)
+# message(STATUS "Executable target location: ${TARGET_LOCATION}")

@@ -64,22 +64,22 @@ jobs:
           echo "Building and running all days..."
 
           # First, build ONLY Day 34 project for testing
-          echo "Building Day 34 project only..."
+          echo "Building Day 34 project (voxel_filter) only..." # Updated description
           cd "${BUILD_DIR}"
           # cmake --build . # Restore full build (Commented out for single day test)
-          cmake --build . --target day034_voxel_filter || { echo "Build failed for day034_voxel_filter"; exit 1; }
+          cmake --build . --target voxel_filter || { echo "Build failed for voxel_filter"; exit 1; } # Updated target name
 
           # Run only Day 34 executable
-          echo "\n===== Running Day 34 =====\n"
+          echo "\n===== Running Day 34 (voxel_filter) =====\n" # Updated description
           BUILD_DAY_DIR="${BUILD_DIR}/day034"
-          EXEC_NAME="day034_voxel_filter"
-          LOG_FILE="${LOGS_DIR}/day034_${EXEC_NAME}.log"
+          EXEC_NAME="voxel_filter" # Updated executable name
+          LOG_FILE="${LOGS_DIR}/day034_${EXEC_NAME}.log" # Updated log file name
           VOXEL_SIZE="0.05"
           PCD_FILE="/home/drboom/cuda-data-sets/table_scene_ascii.pcd"
 
           if [ -f "${BUILD_DAY_DIR}/${EXEC_NAME}" ]; then
-            echo "Running ${EXEC_NAME} with voxel size ${VOXEL_SIZE} and input ${PCD_FILE}..."
-            cd "${BUILD_DAY_DIR}"
+            echo "Running ${EXEC_NAME} from ${BUILD_DAY_DIR} with voxel size ${VOXEL_SIZE} and input ${PCD_FILE}..." # Added context
+            cd "${BUILD_DAY_DIR}" # Ensure we are in the correct directory
             ./${EXEC_NAME} "${PCD_FILE}" ${VOXEL_SIZE} ${VOXEL_SIZE} ${VOXEL_SIZE} > "${LOG_FILE}" 2>&1
             echo "Output preview (see ${LOG_FILE} for full output):"
             head -n 30 "${LOG_FILE}" # Show more lines for potentially verbose output
