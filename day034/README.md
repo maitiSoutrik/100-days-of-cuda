@@ -56,17 +56,45 @@ The input data used is `table_scene_ascii.pcd` from Day 25, which requires host-
 
 ## Execution Results / Output
 
-*(To be filled in after running the code on the target platform)*
-
+The code was compiled and executed on the Jetson Nano using the following command:
+```bash
+./voxel_filter /home/drboom/cuda-data-sets/table_scene_ascii.pcd 0.05 0.05 0.05
 ```
-[Console output will go here]
-```
 
-*(Description of any generated output files/images if applicable)*
+The console output was:
+```
+Using Voxel Size: (0.05, 0.05, 0.05)
+Warning: Number of points read (460399) does not match header (460400).
+Successfully loaded 460399 points from /home/drboom/cuda-data-sets/table_scene_ascii.pcd
+Bounding Box:
+  Min: (-1.1263, -0.6922, -1.9211)
+  Max: (0.92967, 0.53329, -1.0252)
+PCD Loading time: 2529.62 ms
+Grid Dimensions: (42, 25, 18)
+Total Voxels: 18900
+
+--- Voxel Grid Filter Results ---
+Input points: 460399
+Output points (centroids): 2194
+
+--- Performance Timings ---
+Host->Device Transfer: 5.19892 ms
+Voxel Hash Kernel:     37.7115 ms
+Centroid Kernel:       0.402093 ms
+Device->Host Transfer: 0.403811 ms
+Total GPU processing (Kernels + D2H): 38.5174 ms
+
+Voxel grid filtering completed successfully.
+```
+The filter successfully downsampled the input point cloud from 460,399 points to 2,194 centroid points using a 5cm voxel grid.
 
 ## Learnings and Observations
 
-*(To be filled in after implementation and execution)*
+- The host-side ASCII PCD parsing is quite slow (~2.5 seconds) compared to the GPU processing time (~38.5 ms). For performance-critical applications, using a binary PCD format or a more optimized parser would be beneficial.
+- The warning about reading one fewer point than the header indicates might suggest a trailing newline or slight formatting issue in the input PCD file, but the process completed successfully with the points read.
+- The Voxel Hashing kernel, which involves atomic operations across the grid, takes the majority of the GPU time (37.7 ms). Atomic contention could be a factor, depending on point distribution.
+- The Centroid Calculation kernel is very fast (0.4 ms) as it processes a much smaller number of voxels.
+- Memory usage scales with the number of voxels. The chosen 0.05m voxel size resulted in 18,900 voxels, which is manageable. A much smaller voxel size could lead to significantly higher memory requirements for the atomic accumulation arrays.
 
 ## References
 
