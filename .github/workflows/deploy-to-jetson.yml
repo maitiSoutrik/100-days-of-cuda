@@ -63,117 +63,101 @@ jobs:
           # Build and run all days' code
           echo "Building and running all days..."
 
-          # First, build ONLY Day 34 project for testing
-          echo "Building Day 34 project (voxel_filter) only..." # Updated description
+          # First, build all projects
+          echo "Building all projects..."
           cd "${BUILD_DIR}"
-          # cmake --build . # Restore full build (Commented out for single day test)
-          cmake --build . --target voxel_filter || { echo "Build failed for voxel_filter"; exit 1; } # Updated target name
+          cmake --build . # Restore full build
 
-          # Run only Day 34 executable
-          echo "\n===== Running Day 34 (voxel_filter) =====\n" # Updated description
-          BUILD_DAY_DIR="${BUILD_DIR}/day034"
-          EXEC_NAME="voxel_filter" # Updated executable name
-          LOG_FILE="${LOGS_DIR}/day034_${EXEC_NAME}.log" # Updated log file name
-          VOXEL_SIZE="0.05"
-          PCD_FILE="/home/drboom/cuda-data-sets/table_scene_ascii.pcd"
-
-          if [ -f "${BUILD_DAY_DIR}/${EXEC_NAME}" ]; then
-            echo "Running ${EXEC_NAME} from ${BUILD_DAY_DIR} with voxel size ${VOXEL_SIZE} and input ${PCD_FILE}..." # Added context
-            cd "${BUILD_DAY_DIR}" # Ensure we are in the correct directory
-            ./${EXEC_NAME} "${PCD_FILE}" ${VOXEL_SIZE} ${VOXEL_SIZE} ${VOXEL_SIZE} > "${LOG_FILE}" 2>&1
-            echo "Output preview (see ${LOG_FILE} for full output):"
-            head -n 30 "${LOG_FILE}" # Show more lines for potentially verbose output
-            echo ""
-          else
-            echo "Error: Executable ${BUILD_DAY_DIR}/${EXEC_NAME} not found!"
-            exit 1
-          fi
-
-          # --- Temporarily comment out the loop for all days ---
           # Get all day directories
-          # DAY_DIRS=$(ls -d ${REPO_DIR}/day* | sort -V)
+          DAY_DIRS=$(ls -d ${REPO_DIR}/day* | sort -V)
 
-          # --- Temporarily comment out the loop for all days ---
           # Process each day directory
-          # for DAY in $DAY_DIRS; do
-          #   DAY_NAME=$(basename "${DAY}")
-          #   BUILD_DAY_DIR="${BUILD_DIR}/${DAY_NAME}"
-          #
-          #   # Check if the build directory exists
-          #   if [ -d "${BUILD_DAY_DIR}" ]; then
-          #     echo "\n===== Processing ${DAY_NAME} =====\n"
-          #
-          #     # Find all executable files in the directory
-          #     cd "${BUILD_DAY_DIR}"
-          #     EXECUTABLES=$(find . -type f -executable -not -path "*/\.*" | sort)
-          #
-          #     # Run each executable and capture output
-          #     for EXEC in $EXECUTABLES; do
-          #       EXEC_NAME=$(basename "${EXEC}")
-          #       echo "Running ${EXEC_NAME}..."
-          #       LOG_FILE="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}.log"
-          #
-          #       # Run the executable and capture both stdout and stderr
-          #       if [[ "${EXEC_NAME}" == "passthrough_filter" ]]; then
-          #         # Run day025/passthrough_filter with arguments
-          #         echo "Running passthrough_filter with specific arguments..."
-          #         LOG_FILE="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}.log"
-          #         ${EXEC} /home/drboom/cuda-data-sets/table_scene_ascii.pcd filtered_output.pcd 0.0 1.5 0.0 1.2 > "${LOG_FILE}" 2>&1
-          #         sleep 5 # Reduced sleep after specific runs
-          #       elif [[ "${EXEC_NAME}" == "k_means_assignment" ]]; then
-          #         # Run day029/k_means_assignment with synthetic data
-          #         echo "Running k_means_assignment (synthetic)..."
-          #         LOG_FILE_SYNTH="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}_synthetic.log"
-          #         ${EXEC} --clusters 5 --points 10000 > "${LOG_FILE_SYNTH}" 2>&1
-          #         echo "Output preview (synthetic) (see ${LOG_FILE_SYNTH} for full output):"
-          #         head -n 20 "${LOG_FILE_SYNTH}"
-          #         echo ""
-          #         sleep 5 # Reduced sleep after specific runs
-          #
-          #         # Run day029/k_means_assignment with Aggregation.txt
-          #         echo "Running k_means_assignment (Aggregation.txt)..."
-          #         LOG_FILE_AGG="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}_aggregation.log"
-          #         ${EXEC} --clusters 7 --mode file --input /home/drboom/cuda-data-sets/kmeans_data/Aggregation.txt --output ${BUILD_DAY_DIR}/assignments_aggregation.txt > "${LOG_FILE_AGG}" 2>&1
-          #         echo "Output preview (Aggregation.txt) (see ${LOG_FILE_AGG} for full output):"
-          #         head -n 20 "${LOG_FILE_AGG}"
-          #         echo ""
-          #         sleep 5 # Reduced sleep after specific runs
-          #
-          #         # Run day029/k_means_assignment with Compound.txt
-          #         echo "Running k_means_assignment (Compound.txt)..."
-          #         LOG_FILE_COMP="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}_compound.log"
-          #         ${EXEC} --clusters 6 --mode file --input /home/drboom/cuda-data-sets/kmeans_data/Compound.txt --output ${BUILD_DAY_DIR}/assignments_compound.txt > "${LOG_FILE_COMP}" 2>&1
-          #         echo "Output preview (Compound.txt) (see ${LOG_FILE_COMP} for full output):"
-          #         head -n 20 "${LOG_FILE_COMP}"
-          #         echo ""
-          #         sleep 5 # Reduced sleep after specific runs
-          #
-          #         continue # Skip the default logging/preview below for this special case
-          #       # Removed camera_avg_intensity specific diagnostics/handling
-          #       else
-          #         # Default run for other executables
-          #         echo "Running ${EXEC_NAME} (default)..."
-          #         LOG_FILE="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}.log"
-          #         ${EXEC} > "${LOG_FILE}" 2>&1
-          #         sleep 15 # Keep longer sleep for potentially longer default runs
-          #       fi
-          #
-          #       # Print the first few lines of output (for non-k_means cases)
-          #       echo "Output preview (see ${LOG_FILE} for full output):"
-          #       head -n 20 "${LOG_FILE}"
-          #       echo ""
-          #
-          #       # Print the first few lines of output
-          #       echo "Output preview (see ${LOG_FILE} for full output):"
-          #       head -n 20 "${LOG_FILE}"
-          #       echo ""
-          #     done
-          #   else
-          #     echo "Skipping ${DAY_NAME} - no build directory found"
-          #   fi
-          # done # End of loop
+          for DAY in $DAY_DIRS; do
+            DAY_NAME=$(basename "${DAY}")
+            BUILD_DAY_DIR="${BUILD_DIR}/${DAY_NAME}"
 
-          echo "Day 34 test deployment complete!"
+            # Check if the build directory exists
+            if [ -d "${BUILD_DAY_DIR}" ]; then
+              echo "\n===== Processing ${DAY_NAME} =====\n"
+
+              # Find all executable files in the directory
+              cd "${BUILD_DAY_DIR}"
+              EXECUTABLES=$(find . -type f -executable -not -path "*/\.*" | sort)
+
+              # Run each executable and capture output
+              for EXEC in $EXECUTABLES; do
+                EXEC_NAME=$(basename "${EXEC}")
+                echo "Running ${EXEC_NAME}..."
+                LOG_FILE="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}.log"
+
+                # Run the executable and capture both stdout and stderr
+                if [[ "${EXEC_NAME}" == "passthrough_filter" ]]; then
+                  # Run day025/passthrough_filter with arguments
+                  echo "Running passthrough_filter with specific arguments..."
+                  LOG_FILE="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}.log"
+                  ${EXEC} /home/drboom/cuda-data-sets/table_scene_ascii.pcd filtered_output.pcd 0.0 1.5 0.0 1.2 > "${LOG_FILE}" 2>&1
+                  sleep 5 # Reduced sleep after specific runs
+                elif [[ "${EXEC_NAME}" == "k_means_assignment" ]]; then
+                  # Run day029/k_means_assignment with synthetic data
+                  echo "Running k_means_assignment (synthetic)..."
+                  LOG_FILE_SYNTH="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}_synthetic.log"
+                  ${EXEC} --clusters 5 --points 10000 > "${LOG_FILE_SYNTH}" 2>&1
+                  echo "Output preview (synthetic) (see ${LOG_FILE_SYNTH} for full output):"
+                  head -n 20 "${LOG_FILE_SYNTH}"
+                  echo ""
+                  sleep 5 # Reduced sleep after specific runs
+
+                  # Run day029/k_means_assignment with Aggregation.txt
+                  echo "Running k_means_assignment (Aggregation.txt)..."
+                  LOG_FILE_AGG="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}_aggregation.log"
+                  ${EXEC} --clusters 7 --mode file --input /home/drboom/cuda-data-sets/kmeans_data/Aggregation.txt --output ${BUILD_DAY_DIR}/assignments_aggregation.txt > "${LOG_FILE_AGG}" 2>&1
+                  echo "Output preview (Aggregation.txt) (see ${LOG_FILE_AGG} for full output):"
+                  head -n 20 "${LOG_FILE_AGG}"
+                  echo ""
+                  sleep 5 # Reduced sleep after specific runs
+
+                  # Run day029/k_means_assignment with Compound.txt
+                  echo "Running k_means_assignment (Compound.txt)..."
+                  LOG_FILE_COMP="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}_compound.log"
+                  ${EXEC} --clusters 6 --mode file --input /home/drboom/cuda-data-sets/kmeans_data/Compound.txt --output ${BUILD_DAY_DIR}/assignments_compound.txt > "${LOG_FILE_COMP}" 2>&1
+                  echo "Output preview (Compound.txt) (see ${LOG_FILE_COMP} for full output):"
+                  head -n 20 "${LOG_FILE_COMP}"
+                  echo ""
+                  sleep 5 # Reduced sleep after specific runs
+
+                  continue # Skip the default logging/preview below for this special case
+                # Removed camera_avg_intensity specific diagnostics/handling
+                # Add specific handling for Day 34 voxel_filter
+                elif [[ "${DAY_NAME}" == "day034" && "${EXEC_NAME}" == "voxel_filter" ]]; then
+                  echo "Running voxel_filter with specific arguments..."
+                  VOXEL_SIZE="0.05"
+                  PCD_FILE="/home/drboom/cuda-data-sets/table_scene_ascii.pcd"
+                  ${EXEC} "${PCD_FILE}" ${VOXEL_SIZE} ${VOXEL_SIZE} ${VOXEL_SIZE} > "${LOG_FILE}" 2>&1
+                  sleep 5 # Reduced sleep after specific runs
+                else
+                  # Default run for other executables
+                  echo "Running ${EXEC_NAME} (default)..."
+                  LOG_FILE="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}.log"
+                  ${EXEC} > "${LOG_FILE}" 2>&1
+                  sleep 15 # Keep longer sleep for potentially longer default runs
+                fi
+
+                # Print the first few lines of output (for non-k_means cases)
+                echo "Output preview (see ${LOG_FILE} for full output):"
+                head -n 20 "${LOG_FILE}"
+                echo ""
+
+                # Print the first few lines of output
+                echo "Output preview (see ${LOG_FILE} for full output):"
+                head -n 20 "${LOG_FILE}"
+                echo ""
+              done
+            else
+              echo "Skipping ${DAY_NAME} - no build directory found"
+            fi
+          done # End of loop
+
+          echo "Deployment complete! All binaries have been built and run."
           echo "Logs are available in ${LOGS_DIR}"
           EOL
 
