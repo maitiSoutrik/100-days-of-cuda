@@ -55,6 +55,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 31  | 2025-04-09 | 2D Heat Simulation (Basic vs Shared Memory) | [Link](./day031/) |
 | 32  | 2025-04-10 | CUDA Streams for Overlap (Matrix Multiply) | [Link](./day032/) |
 | 33  | 2025-04-11 | Parallel Reduction Optimization (Warp Shuffle) | [Link](./day033/) |
+| 34  | 2025-04-12 | Point Cloud Voxel Grid Filter (Atomics) | [Link](./day034/) |
 
 ## Rules
 
