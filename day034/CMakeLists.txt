@@ -15,7 +15,7 @@ set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3")
 add_executable(voxel_filter voxel_grid_filter.cu) # Renamed target as requested
 
 # Link necessary libraries (CUDA runtime and math)
-target_link_libraries(voxel_filter PRIVATE CUDA::cudart m) # Consolidated libraries
+target_link_libraries(voxel_filter PRIVATE ${CUDA_LIBRARIES} m) # Use ${CUDA_LIBRARIES} consistent with Day 33
 
 # Optional: Add include directories if needed (e.g., for helper headers)
 # include_directories(include)
