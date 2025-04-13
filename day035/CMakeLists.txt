@@ -25,8 +25,8 @@ add_executable(kalman_predict kalman_predict.cu)
 # Link libraries
 target_link_libraries(kalman_predict
     ${CUDA_LIBRARIES} # Links cuda_runtime and core libraries
-    # If specific cuBLAS symbols are needed and not covered by CUDA_LIBRARIES:
-    # ${CUDA_CUBLAS_LIBRARIES} # Prefer using CUDA_LIBRARIES if possible as per rules
+    # Explicitly link cuBLAS library as required
+    ${CUDA_CUBLAS_LIBRARIES}
     m # Link math library if needed
 )
 
