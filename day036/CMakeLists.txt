@@ -24,10 +24,8 @@ find_package(CUDA REQUIRED COMPONENTS cusparse)
 add_executable(cusparse_spmv cusparse_spmv.cu)
 
 # Link against CUDA runtime and cuSPARSE libraries
-# Using the variables provided by FindCUDA as per .clinerules
-# ${CUDA_LIBRARIES} typically includes cudart
-# ${CUDA_CUSPARSE_LIBRARIES} is the variable for cuSPARSE
-target_link_libraries(cusparse_spmv PRIVATE ${CUDA_LIBRARIES} ${CUDA_CUSPARSE_LIBRARIES})
+# Use ${CUDA_LIBRARIES} for runtime (as per rules) and try the modern target for cusparse
+target_link_libraries(cusparse_spmv PRIVATE ${CUDA_LIBRARIES} CUDA::cusparse)
 
 # Link math library (often needed)
 target_link_libraries(cusparse_spmv PRIVATE m)
