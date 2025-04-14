@@ -56,7 +56,8 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 32  | 2025-04-10 | CUDA Streams for Overlap (Matrix Multiply) | [Link](./day032/) |
 | 33  | 2025-04-11 | Parallel Reduction Optimization (Warp Shuffle) | [Link](./day033/) |
 | 34  | 2025-04-12 | Point Cloud Voxel Grid Filter (Atomics) | [Link](./day034/) |
-| 35  | 2025-04-13 | Kalman Filter Prediction Step (cuBLAS) | [Link](./day035/) |
+| 35  | 2025-04-13 | Kalman Filter Prediction Step (cuBLAS) | [Link](./day035/) | :heavy_check_mark: |
+| 36  | 2025-04-14 | SpMV with cuSPARSE          | [Link](./day036/) | :heavy_check_mark: |
 
 ## Rules
 
