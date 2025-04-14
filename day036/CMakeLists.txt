@@ -24,8 +24,8 @@ find_package(CUDA REQUIRED COMPONENTS cusparse)
 add_executable(cusparse_spmv cusparse_spmv.cu)
 
 # Link against CUDA runtime and cuSPARSE libraries
-# Use ${CUDA_LIBRARIES} for runtime (as per rules) and try the modern target for cusparse
-target_link_libraries(cusparse_spmv PRIVATE ${CUDA_LIBRARIES} CUDA::cusparse)
+# Explicitly link 'cusparse' by name as a potential workaround for environment issues
+target_link_libraries(cusparse_spmv PRIVATE ${CUDA_LIBRARIES} cusparse)
 
 # Link math library (often needed)
 target_link_libraries(cusparse_spmv PRIVATE m)
