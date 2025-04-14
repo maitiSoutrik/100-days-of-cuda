@@ -17,10 +17,8 @@ set(CMAKE_CUDA_ARCHITECTURES 53)
 # Set optimization flags
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3")
 
-# Find CUDA toolkit and its components, including cusparse
-# Note: FindCUDA should find cuSPARSE automatically if CUDA toolkit is found correctly.
-# However, explicitly finding the component can be clearer if issues arise.
-find_package(CUDA REQUIRED) 
+# Find CUDA toolkit and explicitly request the cusparse component
+find_package(CUDA REQUIRED COMPONENTS cusparse)
 
 # Add executable
 add_executable(cusparse_spmv cusparse_spmv.cu)
