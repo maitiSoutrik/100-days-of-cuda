@@ -66,7 +66,7 @@ jobs:
           # Build only the Day 36 project for focused testing
           echo "Building only Day 36 (cusparse_spmv)..."
           cd "${BUILD_DIR}"
-          cmake --build . --target day036_cusparse_spmv # Build only day036
+          cmake --build . --target cusparse_spmv # Build only day036 target 'cusparse_spmv'
 
           # Temporarily disable running all days
           # Run only Day 36 executable
