@@ -58,6 +58,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 34  | 2025-04-12 | Point Cloud Voxel Grid Filter (Atomics) | [Link](./day034/) |
 | 35  | 2025-04-13 | Kalman Filter Prediction Step (cuBLAS) | [Link](./day035/) | :heavy_check_mark: |
 | 36  | 2025-04-14 | SpMV with cuSPARSE          | [Link](./day036/) | :heavy_check_mark: |
+| 37  | 2025-04-15 | Simple NN Forward Pass (GEMM + Activation) | [Link](./day037/) | |
 
 ## Rules
 
