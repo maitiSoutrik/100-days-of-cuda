@@ -67,8 +67,7 @@ jobs:
           cmake --build . # Restore full build
 
           # Get all day directories
-          # DAY_DIRS=$(ls -d ${REPO_DIR}/day* | sort -V) # Temporarily commented out to run only Day 38
-          DAY_DIRS="${REPO_DIR}/day038"                 # Set to run only Day 38 for testing
+          DAY_DIRS=$(ls -d ${REPO_DIR}/day* | sort -V)
 
           # Process each day directory
           for DAY in $DAY_DIRS; do
