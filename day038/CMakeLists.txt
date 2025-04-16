@@ -22,7 +22,8 @@ cuda_add_executable(batch_norm_forward batch_norm_forward.cu)
 
 # Link CUDA runtime library and math library
 # Using ${CUDA_LIBRARIES} as specified in .clinerules
-target_link_libraries(batch_norm_forward PRIVATE ${CUDA_LIBRARIES} m)
+# Using plain signature to match internal FindCUDA usage
+target_link_libraries(batch_norm_forward ${CUDA_LIBRARIES} m)
 
 # Optional: Print information during configuration
 message(STATUS "Configuring Day 38: Batch Normalization Forward Pass")
