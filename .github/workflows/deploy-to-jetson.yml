@@ -166,7 +166,7 @@ jobs:
               done
             else
               echo "Skipping ${DAY_NAME} - no build directory found"
-            # fi
+            fi # Un-commented this line
           # done # End of loop for all days
 
           # === Specific run for Day 39 ===
