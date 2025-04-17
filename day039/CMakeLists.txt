@@ -4,8 +4,8 @@ project(day039_thrust_basics LANGUAGES CUDA CXX)
 # Set CUDA architecture for Jetson Nano
 set(CMAKE_CUDA_ARCHITECTURES 53)
 
-# Set optimization flags
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3")
+# Set optimization flags and enable extended lambdas
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 -Xcompiler=-Wno-pedantic --extended-lambda")
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
