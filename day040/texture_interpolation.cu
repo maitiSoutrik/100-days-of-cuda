@@ -323,7 +323,8 @@ int main(int argc, char *argv[]) {
         auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
         // 5. Log Output (Headless)
-        printf("Frame: %d, Timestamp_ms: %lld, GPU Interpolation Time: %.3f ms\n",
+        // Use %ld for timestamp (long int) instead of %lld (long long int)
+        printf("Frame: %d, Timestamp_ms: %ld, GPU Interpolation Time: %.3f ms\n",
                i, timestamp, frame_duration_us / 1000.0);
 
 

@@ -14,9 +14,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
 # Find OpenCV package
 # Make sure OpenCV is installed on the Jetson Nano build environment
-find_package(OpenCV REQUIRED core imgproc imgcodecs) # Need imgcodecs for load/save
+find_package(OpenCV REQUIRED core imgproc imgcodecs videoio) # Added videoio for VideoCapture
 if(NOT OpenCV_FOUND)
-    message(FATAL_ERROR "OpenCV (core, imgproc, imgcodecs) required but not found. Please install libopencv-dev.")
+    message(FATAL_ERROR "OpenCV (core, imgproc, imgcodecs, videoio) required but not found. Please install libopencv-dev.")
 endif()
 
 # Include directories (CUDA and OpenCV)
