@@ -61,6 +61,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 37  | 2025-04-15 | Simple NN Forward Pass (GEMM + Activation) | [Link](./day037/) | |
 | 38  | 2025-04-16 | Batch Normalization Kernel (Forward Pass) | [Link](./day038/) | :heavy_check_mark: |
 | 39  | 2025-04-17 | Thrust Library Basics                     | [Link](./day039/) |                    |
+| 40  | 2025-04-18 | Image Interpolation (Texture Memory)    | [Link](./day040/) | :heavy_check_mark: |
 
 ## Rules
 
