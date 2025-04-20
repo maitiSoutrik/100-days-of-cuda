@@ -70,6 +70,14 @@ jobs:
           # Process each day directory
           for DAY in $DAY_DIRS; do
             DAY_NAME=$(basename "${DAY}")
+
+            # --- MODIFICATION: Only process day042 for this specific run ---
+            if [ "${DAY_NAME}" != "day042" ]; then
+              echo "Skipping ${DAY_NAME}..."
+              continue
+            fi
+            # --- END MODIFICATION ---
+
             BUILD_DAY_DIR="${BUILD_DIR}/${DAY_NAME}"
 
             # Check if the build directory exists
