@@ -59,16 +59,21 @@ jobs:
           mkdir -p "${LOGS_DIR}"
 
           # Build and run all days' code
-          # First, build all projects
-          echo "Building all projects..."
+          # First, build only the day041 project
+          echo "Building day041 project (radix_sort target)..."
           cd "${BUILD_DIR}"
-          cmake --build . # Build all targets
+          cmake --build . --target radix_sort # Build only day041 target
 
-          # Get all day directories
-          DAY_DIRS=$(ls -d ${REPO_DIR}/day* | sort -V)
+          # Target only day041 for this run
+          DAY_DIRS="${REPO_DIR}/day041"
 
-          # Process each day directory
+          # Process the target day directory
           for DAY in $DAY_DIRS; do
+            # Ensure the directory actually exists before proceeding
+            if [ ! -d "$DAY" ]; then
+              echo "Error: Directory ${DAY} not found."
+              continue
+            fi
             DAY_NAME=$(basename "${DAY}")
             BUILD_DAY_DIR="${BUILD_DIR}/${DAY_NAME}"
 
