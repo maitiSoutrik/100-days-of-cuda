@@ -58,32 +58,114 @@ jobs:
           LOGS_DIR="${REPO_DIR}/logs"
           mkdir -p "${LOGS_DIR}"
 
-          # Build and run only Day 43 code (Temporary change for testing)
-          echo "Building only Day 43 target (cudnn_conv_fwd)..."
+          # Build and run all days' code
+          # First, build all projects
+          echo "Building all projects..."
           cd "${BUILD_DIR}"
-          cmake --build . --target cudnn_conv_fwd -j$(nproc) || { echo "Build failed for Day 43"; exit 1; }
+          cmake --build . # Build all targets
 
-          echo "\n===== Processing day043 =====\n"
-          BUILD_DAY_DIR="${BUILD_DIR}/day043"
-          EXEC_PATH="${BUILD_DAY_DIR}/cudnn_conv_fwd"
-          LOG_FILE="${LOGS_DIR}/day043_cudnn_conv_fwd.log"
+          # Get all day directories
+          DAY_DIRS=$(ls -d ${REPO_DIR}/day* | sort -V)
 
-          if [ -f "${EXEC_PATH}" ]; then
-            echo "Running cudnn_conv_fwd..."
-            cd "${BUILD_DAY_DIR}" # Ensure execution is from the correct directory if needed
-            ${EXEC_PATH} > "${LOG_FILE}" 2>&1
-            sleep 5 # Give it a moment
+          # Process each day directory
+          for DAY in $DAY_DIRS; do
+            DAY_NAME=$(basename "${DAY}")
+            BUILD_DAY_DIR="${BUILD_DIR}/${DAY_NAME}"
 
-            echo "Output preview (see ${LOG_FILE} for full output):"
-            head -n 30 "${LOG_FILE}" # Show a bit more output for cuDNN
-            echo ""
-          else
-            echo "Error: Executable ${EXEC_PATH} not found after build."
-            exit 1
-          fi
+            # Check if the build directory exists
+            if [ -d "${BUILD_DAY_DIR}" ]; then
+              echo "\n===== Processing ${DAY_NAME} =====\n"
 
-          echo "Temporary deployment complete! Only Day 43 was built and run."
-          echo "Log is available at ${LOG_FILE}"
+              # Find all executable files in the directory
+              cd "${BUILD_DAY_DIR}"
+              EXECUTABLES=$(find . -type f -executable -not -path "*/\.*" | sort)
+
+              # Run each executable and capture output
+              for EXEC in $EXECUTABLES; do
+                EXEC_NAME=$(basename "${EXEC}")
+                echo "Running ${EXEC_NAME}..."
+                LOG_FILE="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}.log"
+
+                # Run the executable and capture both stdout and stderr
+                # Specific handling for executables needing arguments
+                if [[ "${EXEC_NAME}" == "passthrough_filter" && "${DAY_NAME}" == "day025" ]]; then
+                  echo "Running passthrough_filter with specific arguments..."
+                  ${EXEC} /home/drboom/cuda-data-sets/table_scene_ascii.pcd filtered_output.pcd 0.0 1.5 0.0 1.2 > "${LOG_FILE}" 2>&1
+                  sleep 5
+                elif [[ "${EXEC_NAME}" == "k_means_assignment" && "${DAY_NAME}" == "day029" ]]; then
+                  # Run day029/k_means_assignment with synthetic data
+                  echo "Running k_means_assignment (synthetic)..."
+                  LOG_FILE_SYNTH="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}_synthetic.log"
+                  ${EXEC} --clusters 5 --points 10000 > "${LOG_FILE_SYNTH}" 2>&1
+                  echo "Output preview (synthetic) (see ${LOG_FILE_SYNTH} for full output):"
+                  head -n 20 "${LOG_FILE_SYNTH}"
+                  echo ""
+                  sleep 5
+
+                  # Run day029/k_means_assignment with Aggregation.txt
+                  echo "Running k_means_assignment (Aggregation.txt)..."
+                  LOG_FILE_AGG="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}_aggregation.log"
+                  ${EXEC} --clusters 7 --mode file --input /home/drboom/cuda-data-sets/kmeans_data/Aggregation.txt --output ${BUILD_DAY_DIR}/assignments_aggregation.txt > "${LOG_FILE_AGG}" 2>&1
+                  echo "Output preview (Aggregation.txt) (see ${LOG_FILE_AGG} for full output):"
+                  head -n 20 "${LOG_FILE_AGG}"
+                  echo ""
+                  sleep 5
+
+                  # Run day029/k_means_assignment with Compound.txt
+                  echo "Running k_means_assignment (Compound.txt)..."
+                  LOG_FILE_COMP="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}_compound.log"
+                  ${EXEC} --clusters 6 --mode file --input /home/drboom/cuda-data-sets/kmeans_data/Compound.txt --output ${BUILD_DAY_DIR}/assignments_compound.txt > "${LOG_FILE_COMP}" 2>&1
+                  echo "Output preview (Compound.txt) (see ${LOG_FILE_COMP} for full output):"
+                  head -n 20 "${LOG_FILE_COMP}"
+                  echo ""
+                  sleep 5
+
+                  continue # Skip the default logging/preview below for this special case
+                elif [[ "${EXEC_NAME}" == "voxel_filter" && "${DAY_NAME}" == "day034" ]]; then
+                  echo "Running voxel_filter with specific arguments..."
+                  VOXEL_SIZE="0.05"
+                  PCD_FILE="/home/drboom/cuda-data-sets/table_scene_ascii.pcd"
+                  ${EXEC} "${PCD_FILE}" ${VOXEL_SIZE} ${VOXEL_SIZE} ${VOXEL_SIZE} > "${LOG_FILE}" 2>&1
+                  sleep 5
+                elif [[ "${EXEC_NAME}" == "kalman_predict" && "${DAY_NAME}" == "day035" ]]; then
+                  echo "Running kalman_predict with specific arguments..."
+                  DATA_FILE="/home/drboom/cuda-data-sets/imu-data.csv"
+                  ${EXEC} "${DATA_FILE}" > "${LOG_FILE}" 2>&1
+                  sleep 5
+                # Add specific handling for Day 40 file input
+                elif [[ "${EXEC_NAME}" == "texture_interpolation" && "${DAY_NAME}" == "day040" ]]; then
+                    echo "Running ${EXEC_NAME} with default file input..."
+                    ${EXEC} > "${LOG_FILE}" 2>&1 # Default uses lena_gray.png
+                    # Could add a camera run here too if desired for full CI log
+                    LOG_FILE_CAM="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}_camera.log"
+                    echo "Running ${EXEC_NAME} with camera input (index 0)..."
+                    ${EXEC} --camera 0 > "${LOG_FILE_CAM}" 2>&1 & # Run camera test in background? Or sequentially? Sequential is simpler.
+                    echo "Camera test output logged to ${LOG_FILE_CAM}"
+                    sleep 5 # Give camera test some time
+                else
+                  # Default run for other executables
+                  echo "Running ${EXEC_NAME} (default)..."
+                  ${EXEC} > "${LOG_FILE}" 2>&1
+                  sleep 15 # Longer sleep for potentially longer default runs
+                fi
+
+                # Print the first few lines of output (check if log file exists first)
+                if [ -f "${LOG_FILE}" ]; then
+                    echo "Output preview (see ${LOG_FILE} for full output):"
+                    head -n 20 "${LOG_FILE}"
+                    echo ""
+                else
+                    echo "Warning: Log file ${LOG_FILE} not found after running ${EXEC_NAME}."
+                fi
+
+              done # End executable loop
+            else
+              echo "Skipping ${DAY_NAME} - no build directory found"
+            fi
+          done # End day loop
+
+          echo "Deployment complete! All binaries have been built and run."
+          echo "Logs are available in ${LOGS_DIR}"
           EOL
 
           # Copy and execute the deployment script on the Jetson Nano
