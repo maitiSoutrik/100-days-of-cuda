@@ -41,8 +41,8 @@ int main() {
     // 1. Define Tensor Dimensions (NCHW format)
     int n = 1;      // Batch size
     int c = 3;      // Input channels
-    int h = 224;    // Input height
-    int w = 224;    // Input width
+    int h = 512;    // Input height (Increased from 224)
+    int w = 512;    // Input width (Increased from 224)
 
     // 2. Define Filter Dimensions (KCRS format)
     int k = 64;     // Output channels (number of filters)
