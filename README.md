@@ -64,6 +64,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 40  | 2025-04-18 | Image Interpolation (Texture Memory)    | [Link](./day040/) | :heavy_check_mark: |
 | 41  | 2025-04-19 | Parallel Radix Sort (Basic Single Pass) | [Link](./day041/) |                    |
 | 42  | 2025-04-20 | N-Body Simulation Optimization (Shared Memory) | [Link](./day042/) |                    |
+| 43  | 2025-04-21 | Simple cuDNN Convolution (Forward) | [Link](./day043/) |                    |
 
 ## Rules
 
