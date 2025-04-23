@@ -17,7 +17,7 @@ cuda_add_executable(occupancy_grid occupancy_grid.cu)
 # Link required libraries
 # Need CUDA runtime and potentially math library
 find_package(CUDA REQUIRED)
-target_link_libraries(occupancy_grid PRIVATE ${CUDA_LIBRARIES} m)
+target_link_libraries(occupancy_grid ${CUDA_LIBRARIES} m) # Use plain signature
 
 # Optional: Add include directories if needed later
 # include_directories(...)
