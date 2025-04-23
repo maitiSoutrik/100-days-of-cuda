@@ -66,6 +66,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 42  | 2025-04-20 | N-Body Simulation Optimization (Shared Memory) | [Link](./day042/) |                    |
 | 43  | 2025-04-21 | Simple cuDNN Convolution (Forward) | [Link](./day043/) |                    |
 | 44  | 2025-04-22 | Occupancy Grid Mapping Update | [Link](./day044/) |                    |
+| 45  | 2025-04-23 | Optical Flow Gradient Step (Lucas-Kanade) | [Link](./day045/) |                    |
 
 ## Rules
 
