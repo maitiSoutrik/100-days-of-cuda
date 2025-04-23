@@ -64,17 +64,15 @@ jobs:
           cd "${BUILD_DIR}"
           cmake --build . # Build all targets
 
-          # MODIFIED: Process only day044
           # Get all day directories
-          # DAY_DIRS=$(ls -d ${REPO_DIR}/day* | sort -V) # Commented out
+          DAY_DIRS=$(ls -d ${REPO_DIR}/day* | sort -V)
 
-          # Process only day044 directory
-          DAY_NAME="day044"
-          # for DAY in $DAY_DIRS; do # Commented out loop start
-            # DAY_NAME=$(basename "${DAY}") # Set manually above
+          # Process each day directory
+          for DAY in $DAY_DIRS; do
+            DAY_NAME=$(basename "${DAY}")
             BUILD_DAY_DIR="${BUILD_DIR}/${DAY_NAME}"
 
-            # Check if the build directory exists for Day 44
+            # Check if the build directory exists
             if [ -d "${BUILD_DAY_DIR}" ]; then
               echo "\n===== Processing ${DAY_NAME} =====\n"
 
@@ -164,9 +162,9 @@ jobs:
             else
               echo "Skipping ${DAY_NAME} - no build directory found"
             fi
-          # done # End day loop - MODIFIED: Commented out loop end
+          done # End day loop
 
-          echo "Deployment complete! Only day044 binary run attempted."
+          echo "Deployment complete! All binaries have been built and run."
           echo "Logs are available in ${LOGS_DIR}"
           EOL
 
