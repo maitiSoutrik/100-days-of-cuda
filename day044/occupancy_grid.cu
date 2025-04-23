@@ -115,6 +115,39 @@ __global__ void updateOccupancyGridKernel(float* logOddsMap, int width, int heig
     }
 }
 
+// Function to print the map to the console using characters
+void printMapToConsole(float* logOddsMap, int width, int height) {
+    printf("\n--- Occupancy Grid Map Visualization ---\n");
+    // Define thresholds for visualization (based on probability)
+    // p = 1 / (1 + exp(-log_odds))
+    // log_odds = 1.0 => p ~ 0.73
+    // log_odds = -1.0 => p ~ 0.27
+    float prob_occupied_threshold = 0.7f; // If p > this, consider occupied (#)
+    float prob_free_threshold = 0.3f;     // If p < this, consider free (.)
+                                          // Otherwise, consider unknown (?)
+
+    float log_odds_occupied = logf(prob_occupied_threshold / (1.0f - prob_occupied_threshold));
+    float log_odds_free = logf(prob_free_threshold / (1.0f - prob_free_threshold));
+
+
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            float logOdds = logOddsMap[y * width + x];
+            char displayChar;
+            if (logOdds > log_odds_occupied) {
+                displayChar = '#'; // Occupied
+            } else if (logOdds < log_odds_free) {
+                displayChar = '.'; // Free
+            } else {
+                displayChar = '?'; // Unknown
+            }
+            printf("%c", displayChar);
+        }
+        printf("\n"); // Newline after each row
+    }
+    printf("--- End Map Visualization ---\n");
+}
+
 
 int main() {
     printf("Day 44: Occupancy Grid Mapping Update\n");
@@ -180,11 +213,17 @@ int main() {
     CHECK_CUDA_ERROR(cudaDeviceSynchronize()); // Wait for kernel to complete
     printf("Kernel execution finished.\n");
 
-    // --- Copy results back (optional for verification/visualization) ---
-    // CHECK_CUDA_ERROR(cudaMemcpy(h_logOddsMap, d_logOddsMap, mapSize, cudaMemcpyDeviceToHost));
-    // TODO: Add code to visualize or check the map results if needed
+    // --- Copy results back for visualization ---
+    printf("Copying map data back to host...\n");
+    CHECK_CUDA_ERROR(cudaMemcpy(h_logOddsMap, d_logOddsMap, mapSize, cudaMemcpyDeviceToHost));
 
-    printf("Occupancy grid update simulated (kernel needs Bresenham implementation).\n");
+    // --- Visualize Map in Console ---
+    // Reduce grid size for console output if it's too large
+    // If GRID_WIDTH or GRID_HEIGHT > ~100, this might be too much for logs.
+    // For now, print the full 200x200. Be aware this will be large in logs.
+    printMapToConsole(h_logOddsMap, GRID_WIDTH, GRID_HEIGHT);
+
+    printf("Occupancy grid update simulation and visualization complete.\n");
 
     // Cleanup
     free(h_logOddsMap);
