@@ -65,6 +65,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 41  | 2025-04-19 | Parallel Radix Sort (Basic Single Pass) | [Link](./day041/) |                    |
 | 42  | 2025-04-20 | N-Body Simulation Optimization (Shared Memory) | [Link](./day042/) |                    |
 | 43  | 2025-04-21 | Simple cuDNN Convolution (Forward) | [Link](./day043/) |                    |
+| 44  | 2025-04-22 | Occupancy Grid Mapping Update | [Link](./day044/) |                    |
 
 ## Rules
 
