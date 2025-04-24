@@ -3,6 +3,7 @@
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
 #include <math.h> // For fabs comparison
+#include <chrono> // For CPU timing
 
 // --- Error Checking Macros ---
 #define CHECK_CUDA_ERROR(err) \
@@ -38,15 +39,10 @@ __global__ void calculate_bias_gradients(const float* dL_dOutput, float* dL_dBia
     }
 }
 
-// --- Host Verification Functions ---
-void verify_bias_gradients(const float* h_dL_dOutput, const float* h_dL_dBias_gpu, int output_features, int batch_size) {
-    printf("Verifying Bias Gradients (dL/dBias)...\n");
-    float* h_dL_dBias_cpu = (float*)malloc(output_features * sizeof(float));
-    if (!h_dL_dBias_cpu) {
-        fprintf(stderr, "Failed to allocate host memory for CPU bias verification\n");
-        return;
-    }
+// --- Host Calculation & Verification Functions ---
 
+// Calculate bias gradients on CPU
+void calculate_bias_gradients_cpu(const float* h_dL_dOutput, float* h_dL_dBias_cpu, int output_features, int batch_size) {
     for (int j = 0; j < output_features; ++j) { // Iterate over output features
         h_dL_dBias_cpu[j] = 0.0f;
         for (int i = 0; i < batch_size; ++i) { // Sum across batch dimension
@@ -54,77 +50,52 @@ void verify_bias_gradients(const float* h_dL_dOutput, const float* h_dL_dBias_gp
              h_dL_dBias_cpu[j] += h_dL_dOutput[i * output_features + j];
         }
     }
+}
 
+// Compare CPU and GPU results
+bool compare_gradients(const float* arr1, const float* arr2, size_t size, const char* name, float threshold = 1e-4) {
     float max_error = 0.0f;
     int errors = 0;
-    for (int j = 0; j < output_features; ++j) {
-        float error = fabs(h_dL_dBias_cpu[j] - h_dL_dBias_gpu[j]);
+    for (size_t i = 0; i < size; ++i) {
+        float error = fabs(arr1[i] - arr2[i]);
         if (error > max_error) max_error = error;
-        if (error > 1e-4) { // Allow for small floating point differences
-           // printf("Bias Error at index %d: CPU=%.6f, GPU=%.6f, Error=%.6f\n", j, h_dL_dBias_cpu[j], h_dL_dBias_gpu[j], error);
+        if (error > threshold) {
+           // printf("%s Error at index %zu: Arr1=%.6f, Arr2=%.6f, Error=%.6f\n", name, i, arr1[i], arr2[i], error);
            errors++;
         }
     }
 
     if (errors == 0) {
-        printf("Bias Gradients Verification PASSED. Max Error: %.6f\n", max_error);
+        printf("%s Verification PASSED. Max Error: %.6f\n", name, max_error);
+        return true;
     } else {
-        printf("Bias Gradients Verification FAILED. Found %d discrepancies. Max Error: %.6f\n", errors, max_error);
+        printf("%s Verification FAILED. Found %d discrepancies. Max Error: %.6f\n", name, errors, max_error);
+        return false;
     }
-
-    free(h_dL_dBias_cpu);
 }
 
-void verify_weight_gradients(const float* h_dL_dOutput, const float* h_Input, const float* h_dL_dW_gpu, int input_features, int output_features, int batch_size) {
-    printf("Verifying Weight Gradients (dL/dW)...\n");
-    // dL/dW = dL/dOutput * Input^T
-    // Dimensions: (output_features x batch_size) * (batch_size x input_features) -> (output_features x input_features)
-    // Remember: cuBLAS assumes column-major, so our host calculation needs to match.
 
-    float* h_dL_dW_cpu = (float*)malloc(output_features * input_features * sizeof(float));
-    if (!h_dL_dW_cpu) {
-        fprintf(stderr, "Failed to allocate host memory for CPU weight verification\n");
-        return;
-    }
+// Calculate weight gradients on CPU
+void calculate_weight_gradients_cpu(const float* h_dL_dOutput, const float* h_Input, float* h_dL_dW_cpu, int input_features, int output_features, int batch_size) {
+    // dL/dW = dL/dOutput * Input^T (thinking in Column-Major)
+    // A = dL_dOutput (output_features x batch_size)
+    // B = Input (input_features x batch_size)
+    // C = dL_dW (output_features x input_features) = A * B^T
 
-    // Standard Row-Major Matrix Multiplication Logic for C = A * B^T
-    // A = dL_dOutput (output_features x batch_size) - Treat as Column-Major
-    // B = Input (input_features x batch_size) - Treat as Column-Major
-    // C = dL_dW (output_features x input_features) - Treat as Column-Major
-
-    for (int row = 0; row < output_features; ++row) { // Output feature index
-        for (int col = 0; col < input_features; ++col) { // Input feature index
+    // Perform C = A * B^T using Column-Major indexing
+    // C[col, row] = sum_k (A[k, row] * B[k, col])
+     for (int row = 0; row < output_features; ++row) { // Output feature index (row of C)
+        for (int col = 0; col < input_features; ++col) { // Input feature index (col of C)
             float sum = 0.0f;
-            for (int k = 0; k < batch_size; ++k) { // Batch index
-                // A[k, row] * B[k, col] (Column-major indexing)
-                float dL_dOut_val = h_dL_dOutput[k * output_features + row];
-                float input_val = h_Input[k * input_features + col];
-                sum += dL_dOut_val * input_val;
+            for (int k = 0; k < batch_size; ++k) { // Batch index (inner dimension)
+                // A[k * lda + row] = dL_dOutput[k * output_features + row]
+                // B[k * ldb + col] = Input[k * input_features + col]
+                sum += h_dL_dOutput[k * output_features + row] * h_Input[k * input_features + col];
             }
-            // C[col, row] = sum (Column-major indexing)
+            // C[col * ldc + row] = dL_dW[col * output_features + row]
             h_dL_dW_cpu[col * output_features + row] = sum;
         }
     }
-
-
-    float max_error = 0.0f;
-    int errors = 0;
-    for (int i = 0; i < output_features * input_features; ++i) {
-        float error = fabs(h_dL_dW_cpu[i] - h_dL_dW_gpu[i]);
-         if (error > max_error) max_error = error;
-        if (error > 1e-4) { // Allow small differences
-            // printf("Weight Error at index %d: CPU=%.6f, GPU=%.6f, Error=%.6f\n", i, h_dL_dW_cpu[i], h_dL_dW_gpu[i], error);
-            errors++;
-        }
-    }
-
-     if (errors == 0) {
-        printf("Weight Gradients Verification PASSED. Max Error: %.6f\n", max_error);
-    } else {
-        printf("Weight Gradients Verification FAILED. Found %d discrepancies. Max Error: %.6f\n", errors, max_error);
-    }
-
-    free(h_dL_dW_cpu);
 }
 
 
@@ -147,7 +118,7 @@ int main() {
     // dL/dBias: (output_features, 1) - Result of reduction kernel
 
     // --- Host Memory Allocation ---
-    float *h_Input, *h_dL_dOutput, *h_dL_dW_gpu, *h_dL_dBias_gpu;
+    float *h_Input, *h_dL_dOutput, *h_dL_dW_gpu, *h_dL_dBias_gpu, *h_dL_dW_cpu, *h_dL_dBias_cpu;
     size_t input_size = (size_t)INPUT_FEATURES * BATCH_SIZE * sizeof(float);
     size_t dl_doutput_size = (size_t)OUTPUT_FEATURES * BATCH_SIZE * sizeof(float);
     size_t dl_dw_size = (size_t)OUTPUT_FEATURES * INPUT_FEATURES * sizeof(float);
@@ -155,10 +126,13 @@ int main() {
 
     h_Input = (float*)malloc(input_size);
     h_dL_dOutput = (float*)malloc(dl_doutput_size);
-    h_dL_dW_gpu = (float*)malloc(dl_dw_size);    // To store GPU result
+    h_dL_dW_gpu = (float*)malloc(dl_dw_size);      // To store GPU result
     h_dL_dBias_gpu = (float*)malloc(dl_dbias_size); // To store GPU result
+    h_dL_dW_cpu = (float*)malloc(dl_dw_size);      // For CPU calculation
+    h_dL_dBias_cpu = (float*)malloc(dl_dbias_size); // For CPU calculation
 
-    if (!h_Input || !h_dL_dOutput || !h_dL_dW_gpu || !h_dL_dBias_gpu) {
+
+    if (!h_Input || !h_dL_dOutput || !h_dL_dW_gpu || !h_dL_dBias_gpu || !h_dL_dW_cpu || !h_dL_dBias_cpu) {
         fprintf(stderr, "Failed to allocate host memory\n");
         return EXIT_FAILURE;
     }
@@ -189,8 +163,16 @@ int main() {
     cublasHandle_t cublas_handle;
     CHECK_CUBLAS_ERROR(cublasCreate(&cublas_handle));
 
-    // --- Weight Gradient Calculation (dL/dW = dL/dOutput * Input^T) ---
-    printf("Calculating weight gradients (dL/dW) using cuBLAS Sgemm...\n");
+    // --- CUDA Events for GPU Timing ---
+    cudaEvent_t start_gpu, stop_gpu;
+    CHECK_CUDA_ERROR(cudaEventCreate(&start_gpu));
+    CHECK_CUDA_ERROR(cudaEventCreate(&stop_gpu));
+    float gpu_weight_time_ms = 0.0f;
+    float gpu_bias_time_ms = 0.0f;
+
+    // --- GPU Weight Gradient Calculation (dL/dW = dL/dOutput * Input^T) ---
+    printf("Calculating weight gradients (dL/dW) using cuBLAS Sgemm (GPU)...\n");
+    CHECK_CUDA_ERROR(cudaEventRecord(start_gpu));
     // cuBLAS assumes column-major ordering.
     // A = dL_dOutput (Matrix dimensions: OUTPUT_FEATURES x BATCH_SIZE) -> m=OUTPUT_FEATURES, k=BATCH_SIZE
     // B = Input      (Matrix dimensions: INPUT_FEATURES x BATCH_SIZE) -> Transpose -> (BATCH_SIZE x INPUT_FEATURES) -> k=BATCH_SIZE, n=INPUT_FEATURES
@@ -222,25 +204,59 @@ int main() {
                                    &beta,              // beta
                                    d_dL_dW,            // C (dL_dW)
                                    OUTPUT_FEATURES));  // ldc
+    CHECK_CUDA_ERROR(cudaEventRecord(stop_gpu));
+    CHECK_CUDA_ERROR(cudaEventSynchronize(stop_gpu));
+    CHECK_CUDA_ERROR(cudaEventElapsedTime(&gpu_weight_time_ms, start_gpu, stop_gpu));
 
-    // --- Bias Gradient Calculation (dL/dBias = sum(dL/dOutput over batch)) ---
-    printf("Calculating bias gradients (dL/dBias) using custom kernel...\n");
+
+    // --- GPU Bias Gradient Calculation (dL/dBias = sum(dL/dOutput over batch)) ---
+    printf("Calculating bias gradients (dL/dBias) using custom kernel (GPU)...\n");
     int threads_per_block = 256;
     int blocks_per_grid = (OUTPUT_FEATURES + threads_per_block - 1) / threads_per_block;
+
+    CHECK_CUDA_ERROR(cudaEventRecord(start_gpu));
     calculate_bias_gradients<<<blocks_per_grid, threads_per_block>>>(d_dL_dOutput, d_dL_dBias, OUTPUT_FEATURES, BATCH_SIZE);
     CHECK_CUDA_ERROR(cudaGetLastError()); // Check for kernel launch errors
-    CHECK_CUDA_ERROR(cudaDeviceSynchronize()); // Wait for kernel completion
+    CHECK_CUDA_ERROR(cudaEventRecord(stop_gpu));
+    CHECK_CUDA_ERROR(cudaEventSynchronize(stop_gpu)); // Wait for kernel completion and ensure timing is accurate
+    CHECK_CUDA_ERROR(cudaEventElapsedTime(&gpu_bias_time_ms, start_gpu, stop_gpu));
+
 
     // --- Copy Results Device to Host ---
     printf("Copying results from device to host...\n");
     CHECK_CUDA_ERROR(cudaMemcpy(h_dL_dW_gpu, d_dL_dW, dl_dw_size, cudaMemcpyDeviceToHost));
     CHECK_CUDA_ERROR(cudaMemcpy(h_dL_dBias_gpu, d_dL_dBias, dl_dbias_size, cudaMemcpyDeviceToHost));
 
-    // --- Verification (Optional but Recommended) ---
+    // --- CPU Calculation for Verification & Benchmarking ---
+    printf("\nCalculating gradients on CPU for verification...\n");
+    using Clock = std::chrono::high_resolution_clock;
+    auto cpu_start_time = Clock::now();
+
+    calculate_weight_gradients_cpu(h_dL_dOutput, h_Input, h_dL_dW_cpu, INPUT_FEATURES, OUTPUT_FEATURES, BATCH_SIZE);
+    calculate_bias_gradients_cpu(h_dL_dOutput, h_dL_dBias_cpu, OUTPUT_FEATURES, BATCH_SIZE);
+
+    auto cpu_end_time = Clock::now();
+    double cpu_total_time_ms = std::chrono::duration<double, std::milli>(cpu_end_time - cpu_start_time).count();
+
+
+    // --- Verification ---
     printf("\n--- Verification ---\n");
-    verify_weight_gradients(h_dL_dOutput, h_Input, h_dL_dW_gpu, INPUT_FEATURES, OUTPUT_FEATURES, BATCH_SIZE);
-    verify_bias_gradients(h_dL_dOutput, h_dL_dBias_gpu, OUTPUT_FEATURES, BATCH_SIZE);
+    bool weight_check = compare_gradients(h_dL_dW_cpu, h_dL_dW_gpu, dl_dw_size / sizeof(float), "Weight Gradients (dL/dW)");
+    bool bias_check = compare_gradients(h_dL_dBias_cpu, h_dL_dBias_gpu, dl_dbias_size / sizeof(float), "Bias Gradients (dL/dBias)");
     printf("--------------------\n");
+
+    // --- Benchmarking Results ---
+    printf("\n--- Benchmarking ---\n");
+    printf("CPU Total Time: %.3f ms\n", cpu_total_time_ms);
+    printf("GPU Weight Gradient Time (cuBLAS): %.3f ms\n", gpu_weight_time_ms);
+    printf("GPU Bias Gradient Time (Kernel):   %.3f ms\n", gpu_bias_time_ms);
+    printf("GPU Total Computation Time:        %.3f ms\n", gpu_weight_time_ms + gpu_bias_time_ms);
+    if (weight_check && bias_check) {
+         printf("Speedup Factor (CPU Time / GPU Time): %.2fx\n", cpu_total_time_ms / (gpu_weight_time_ms + gpu_bias_time_ms));
+    } else {
+        printf("Speedup factor not calculated due to verification failure.\n");
+    }
+    printf("---------------------\n");
 
 
     /*
@@ -263,6 +279,8 @@ int main() {
 
     // --- Cleanup ---
     printf("Cleaning up resources...\n");
+    CHECK_CUDA_ERROR(cudaEventDestroy(start_gpu));
+    CHECK_CUDA_ERROR(cudaEventDestroy(stop_gpu));
     CHECK_CUBLAS_ERROR(cublasDestroy(cublas_handle));
     CHECK_CUDA_ERROR(cudaFree(d_Input));
     CHECK_CUDA_ERROR(cudaFree(d_dL_dOutput));
@@ -272,6 +290,8 @@ int main() {
     free(h_dL_dOutput);
     free(h_dL_dW_gpu);
     free(h_dL_dBias_gpu);
+    free(h_dL_dW_cpu);    // Free CPU result arrays
+    free(h_dL_dBias_cpu); // Free CPU result arrays
 
     printf("Day 46 Finished Successfully.\n");
     return EXIT_SUCCESS;
