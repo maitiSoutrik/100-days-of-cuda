@@ -67,6 +67,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 43  | 2025-04-21 | Simple cuDNN Convolution (Forward) | [Link](./day043/) |                    |
 | 44  | 2025-04-22 | Occupancy Grid Mapping Update | [Link](./day044/) |                    |
 | 45  | 2025-04-23 | Optical Flow Gradient Step (Lucas-Kanade) | [Link](./day045/) |                    |
+| 46  | 2025-04-24 | Simple Backpropagation Step (Fully Connected Layer) | [Link](./day046/) | :heavy_check_mark: |
 
 ## Rules
 
