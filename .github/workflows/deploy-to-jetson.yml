@@ -72,12 +72,14 @@ jobs:
             DAY_NAME=$(basename "${DAY}")
             BUILD_DAY_DIR="${BUILD_DIR}/${DAY_NAME}"
 
-            # Check if the build directory exists
-            if [ -d "${BUILD_DAY_DIR}" ]; then
-              echo "\n===== Processing ${DAY_NAME} =====\n"
+              # Check if the build directory exists
+              if [ -d "${BUILD_DAY_DIR}" ]; then
+                # TEMPORARY: Only run day046 for faster testing
+                if [[ "${DAY_NAME}" == "day046" ]]; then
+                  echo "\n===== Processing ${DAY_NAME} (Testing Only) =====\n"
 
-              # Find all executable files in the directory
-              cd "${BUILD_DAY_DIR}"
+                  # Find all executable files in the directory
+                  cd "${BUILD_DAY_DIR}"
               EXECUTABLES=$(find . -type f -executable -not -path "*/\.*" | sort)
 
               # Run each executable and capture output
@@ -159,6 +161,10 @@ jobs:
                 fi
 
               done # End executable loop
+              # END TEMPORARY IF
+              else
+                  echo "Skipping ${DAY_NAME} (Not day046 for testing)"
+              fi
             else
               echo "Skipping ${DAY_NAME} - no build directory found"
             fi
