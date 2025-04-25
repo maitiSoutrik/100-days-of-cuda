@@ -7,8 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Specify CUDA Architecture for Jetson Nano
 set(CMAKE_CUDA_ARCHITECTURES 53)
 
-# Enable Relocatable Device Code (required for Dynamic Parallelism)
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 -rdc=true")
+# Add optimization flags (Separable compilation handles rdc=true)
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3")
 
 # Find CUDA package to get necessary libraries
 find_package(CUDA REQUIRED)
