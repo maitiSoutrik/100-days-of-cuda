@@ -69,14 +69,37 @@ int main() {
     std::cout << "Launching parent kernel with " << blocks_per_grid << " blocks and "
               << threads_per_block << " threads per block." << std::endl;
 
-    // Launch the parent kernel
+    // --- Timing Setup ---
+    cudaEvent_t start_event, stop_event;
+    CHECK_CUDA_ERROR(cudaEventCreate(&start_event));
+    CHECK_CUDA_ERROR(cudaEventCreate(&stop_event));
+
+    // Record start event
+    CHECK_CUDA_ERROR(cudaEventRecord(start_event, 0)); // 0 is the default stream
+
+    // --- Launch the parent kernel ---
     parent_kernel<<<blocks_per_grid, threads_per_block>>>(d_output_data, size);
     CHECK_CUDA_ERROR(cudaGetLastError()); // Check for kernel launch errors
 
-    // Synchronize the host thread with the device to ensure kernel completion
-    // This waits for the parent kernel (and all dynamically launched children) to finish
-    CHECK_CUDA_ERROR(cudaDeviceSynchronize());
+    // --- Timing End & Measurement ---
+    // Record stop event
+    CHECK_CUDA_ERROR(cudaEventRecord(stop_event, 0));
+
+    // Synchronize the host thread with the stop event specifically
+    // This ensures the kernel (and children) is finished before calculating time
+    CHECK_CUDA_ERROR(cudaEventSynchronize(stop_event));
     std::cout << "Parent kernel execution completed." << std::endl;
+
+    // Calculate elapsed time
+    float milliseconds = 0;
+    CHECK_CUDA_ERROR(cudaEventElapsedTime(&milliseconds, start_event, stop_event));
+    std::cout << "Kernel Execution Time (including children): " << milliseconds << " ms" << std::endl;
+
+    // Destroy events
+    CHECK_CUDA_ERROR(cudaEventDestroy(start_event));
+    CHECK_CUDA_ERROR(cudaEventDestroy(stop_event));
+    // --- Timing End ---
+
 
     // Copy results back to host
     CHECK_CUDA_ERROR(cudaMemcpy(h_output_data.data(), d_output_data, size * sizeof(int), cudaMemcpyDeviceToHost));
