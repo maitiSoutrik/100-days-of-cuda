@@ -16,6 +16,9 @@ find_package(CUDA REQUIRED)
 # Define the executable
 add_executable(dynamic_parallelism_example dynamic_parallelism_example.cu)
 
+# Explicitly enable separable compilation for the target (required for -rdc=true)
+set_target_properties(dynamic_parallelism_example PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+
 # Link CUDA libraries, including the device runtime for dynamic parallelism
 target_link_libraries(dynamic_parallelism_example PUBLIC ${CUDA_LIBRARIES} ${CUDA_cudadevrt_LIBRARY})
 
