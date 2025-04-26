@@ -69,6 +69,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 45  | 2025-04-23 | Optical Flow Gradient Step (Lucas-Kanade) | [Link](./day045/) |                    |
 | 46  | 2025-04-24 | Simple Backpropagation Step (Fully Connected Layer) | [Link](./day046/) | :heavy_check_mark: |
 | 47  | 2025-04-25 | Dynamic Parallelism (Simple Example) | [Link](./day047/) | :heavy_check_mark: |
+| 48  | 2025-04-26 | Parallel AABB Collision Detection | [Link](./day048/) |                    |
 
 ## Rules
 
