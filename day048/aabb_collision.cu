@@ -137,7 +137,7 @@ float randFloat(float low, float high) {
 int main() {
     srand(time(0)); // Seed random number generator
 
-    int numBoxes = 100; // Number of AABBs
+    int numBoxes = 2000; // Number of AABBs - Increased size
     printf("Starting AABB Collision Check for %d boxes.\n", numBoxes);
 
     long long numPairs = (long long)numBoxes * (numBoxes - 1) / 2;
