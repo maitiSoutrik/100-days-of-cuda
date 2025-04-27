@@ -129,26 +129,20 @@ __global__ void reduction_count_kernel(const float* input_mag, unsigned int* out
 
 // --- Host Code ---
 int main(int argc, char **argv) {
-    printf("Day 49: Accelerated Perception Pipeline (Camera Input)\n");
+    printf("Day 49: Accelerated Perception Pipeline (File Input for Backend)\n");
 
-    // 1. Initialize Camera using OpenCV
-    cv::VideoCapture cap(0); // Open the default camera
-    if (!cap.isOpened()) {
-        fprintf(stderr, "Error: Could not open camera.\n");
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s <input_image_path>\n", argv[0]);
         return EXIT_FAILURE;
     }
+    const char* image_path = argv[1];
 
-    // Capture a single frame
-    cv::Mat h_input_img_bgr;
-    printf("Attempting to capture frame from camera...\n");
-    cap >> h_input_img_bgr; // or cap.read(h_input_img_bgr);
-
+    // 1. Load Image using OpenCV
+    cv::Mat h_input_img_bgr = cv::imread(image_path, cv::IMREAD_COLOR);
     if (h_input_img_bgr.empty()) {
-        fprintf(stderr, "Error: Captured empty frame.\n");
-        cap.release(); // Release camera resource
+        fprintf(stderr, "Error: Could not open or find the image: %s\n", image_path);
         return EXIT_FAILURE;
     }
-    printf("Frame captured successfully.\n");
 
     int width = h_input_img_bgr.cols;
     int height = h_input_img_bgr.rows;
@@ -157,13 +151,11 @@ int main(int argc, char **argv) {
     size_t image_size_gray = num_pixels * sizeof(unsigned char);
     size_t image_size_float = num_pixels * sizeof(float);
 
-    printf("Captured Frame Info: (Width: %d, Height: %d, Channels: %d)\n",
-           width, height, h_input_img_bgr.channels());
+    printf("Input image: %s (Width: %d, Height: %d, Channels: %d)\n",
+           image_path, width, height, h_input_img_bgr.channels());
 
-     // Ensure the captured frame is suitable (e.g., 3 channels)
     if (h_input_img_bgr.channels() != 3) {
-         fprintf(stderr, "Error: Captured frame is not a 3-channel color image.\n");
-         cap.release();
+         fprintf(stderr, "Error: Input image must be a 3-channel color image.\n");
          return EXIT_FAILURE;
     }
 
@@ -270,8 +262,6 @@ int main(int argc, char **argv) {
     CHECK_CUDA_ERROR(cudaFree(d_edge_count));
     CHECK_CUDA_ERROR(cudaFree(d_gaussian_filter));
 
-    // Release camera
-    cap.release();
 
     printf("Finished successfully.\n");
     return 0;

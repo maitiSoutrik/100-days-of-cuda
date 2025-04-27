@@ -2,14 +2,17 @@ import cv2
 import subprocess
 import re
 import os
+import tempfile # For creating temporary files
+import uuid     # For unique filenames
 
 # Path to the compiled C++ executable (relative to the script location or root)
 # Adjust this path based on where you run the script from and your build directory structure.
 # Assumes running from the root project directory.
 EXECUTABLE_PATH = "./build/day049/day049_perception_pipeline"
+TEMP_IMAGE_FILENAME_BASE = "temp_cuda_frame" # Base name for temp file
 
-def run_cuda_pipeline():
-    """Executes the C++ CUDA pipeline and parses the edge count."""
+def run_cuda_pipeline_on_file(image_path):
+    """Executes the C++ CUDA pipeline on a given image file and parses the edge count."""
     try:
         # Ensure the executable exists
         if not os.path.exists(EXECUTABLE_PATH):
@@ -17,8 +20,8 @@ def run_cuda_pipeline():
              print("Please build the C++ code first (e.g., using 'make day049_perception_pipeline' in the build dir).")
              return None, "Executable not found"
 
-        # Run the C++ executable and capture its output (compatible with older Python 3)
-        result = subprocess.run([EXECUTABLE_PATH],
+        # Run the C++ executable with the image path argument
+        result = subprocess.run([EXECUTABLE_PATH, image_path],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 check=False) # Don't raise exception on non-zero exit
@@ -48,9 +51,9 @@ def run_cuda_pipeline():
                  break # Stop searching once found
 
         if edge_count is None and result.returncode == 0: # Only print warning if C++ didn't report an error
-             print(f"Warning: Could not parse edge count from C++ output.")
+             print(f"Warning: Could not parse edge count from C++ output for file {image_path}.")
              # Print full output if parsing failed but C++ exited cleanly
-             print("--- C++ Full Output ---")
+             print(f"--- C++ Full Output for {image_path} ---")
              print(stdout_str)
              print("-----------------------")
         elif edge_count is None and result.returncode != 0:
@@ -64,7 +67,7 @@ def run_cuda_pipeline():
         print(f"Error: Executable not found at {EXECUTABLE_PATH}")
         return None, "Executable not found"
     except Exception as e:
-        print(f"An error occurred while running the pipeline: {e}")
+        print(f"An error occurred while running the pipeline on {image_path}: {e}")
         return None, f"Exception: {e}"
 
 def main():
@@ -72,63 +75,89 @@ def main():
     print(f"Using CUDA executable: {EXECUTABLE_PATH}")
     print("Press 'q' to quit.")
 
-    # Initialize camera capture using OpenCV in Python for display
+    # Initialize camera capture using OpenCV in Python
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
-        print("Error: Could not open camera for Python display.")
+        print("Error: Could not open camera.")
         return
 
     font = cv2.FONT_HERSHEY_SIMPLEX
     font_scale = 0.7
     font_color = (0, 255, 0) # Green
     line_type = 2
+    temp_file_path = None # Keep track of the temporary file
 
-    frame_count = 0
-    display_interval = 5 # Run pipeline every N frames to reduce overhead if needed, 1 = every frame
-    last_edge_count = 0
-    last_error_msg = ""
+    try:
+        while True:
+            # 1. Capture frame
+            ret, frame = cap.read()
+            if not ret:
+                print("Error: Could not read frame.")
+                break
 
-    while True:
-        # Capture frame for display *in Python*
-        ret, frame = cap.read()
-        if not ret:
-            print("Error: Could not read frame for display.")
-            break
+            # 2. Save frame to a temporary file
+            # Use a unique name to avoid potential conflicts if script restarts quickly
+            temp_filename = f"{TEMP_IMAGE_FILENAME_BASE}_{uuid.uuid4()}.png"
+            temp_file_path = os.path.join(tempfile.gettempdir(), temp_filename)
+            try:
+                 write_status = cv2.imwrite(temp_file_path, frame)
+                 if not write_status:
+                      print(f"Error: Failed to write temporary frame to {temp_file_path}")
+                      edge_count = None
+                      error_msg = "Temp file write failed"
+                 else:
+                     # 3. Run C++ pipeline on the temporary file
+                     edge_count, error_msg = run_cuda_pipeline_on_file(temp_file_path)
 
-        frame_count += 1
-
-        # Run the C++ pipeline periodically
-        if frame_count % display_interval == 0:
-             edge_count, error_msg = run_cuda_pipeline()
-             if edge_count is not None:
-                  last_edge_count = edge_count
-                  last_error_msg = ""
-             else:
-                  # Keep last known count, but show error
-                  last_error_msg = error_msg
+            except Exception as e:
+                 print(f"Error during file write or pipeline execution: {e}")
+                 edge_count = None
+                 error_msg = f"Exception: {e}"
 
 
-        # Display the edge count on the frame
-        if last_error_msg:
-             text = f"Edges: Error ({last_error_msg})"
-             display_color = (0, 0, 255) # Red for error
-        else:
-             text = f"Edges: {last_edge_count}"
-             display_color = font_color
+            # 4. Display the *original captured frame* with the result/error overlaid
+            if error_msg:
+                 text = f"Edges: Error ({error_msg})"
+                 display_color = (0, 0, 255) # Red for error
+            elif edge_count is not None:
+                 text = f"Edges: {edge_count}"
+                 display_color = font_color
+            else:
+                 # Should not happen if error_msg is handled correctly, but as a fallback
+                 text = "Edges: Unknown state"
+                 display_color = (0, 165, 255) # Orange
 
-        cv2.putText(frame, text, (10, 30), font, font_scale, display_color, line_type)
+            cv2.putText(frame, text, (10, 30), font, font_scale, display_color, line_type)
 
-        # Show the frame
-        cv2.imshow('Live Perception Pipeline', frame)
+            # 5. Show the frame
+            cv2.imshow('Live Perception Pipeline', frame)
 
-        # Check for quit key
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+            # 6. Clean up the temporary file *after* C++ process is done
+            if temp_file_path and os.path.exists(temp_file_path):
+                try:
+                    os.remove(temp_file_path)
+                    # print(f"Deleted temp file: {temp_file_path}") # Uncomment for debugging
+                    temp_file_path = None # Reset path after deletion
+                except OSError as e:
+                    print(f"Error deleting temporary file {temp_file_path}: {e}")
+                    temp_file_path = None # Reset path even if deletion failed
 
-    # Release resources
-    cap.release()
-    cv2.destroyAllWindows()
-    print("Viewer stopped.")
+            # Check for quit key
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+    finally:
+        # Release resources
+        cap.release()
+        cv2.destroyAllWindows()
+        # Final cleanup attempt for temp file just in case
+        if temp_file_path and os.path.exists(temp_file_path):
+             try:
+                  os.remove(temp_file_path)
+                  print(f"Cleaned up final temp file: {temp_file_path}")
+             except OSError as e:
+                  print(f"Error during final cleanup of {temp_file_path}: {e}")
+        print("Viewer stopped.")
 
 if __name__ == "__main__":
     main()
