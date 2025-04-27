@@ -17,18 +17,26 @@ def run_cuda_pipeline():
              print("Please build the C++ code first (e.g., using 'make day049_perception_pipeline' in the build dir).")
              return None, "Executable not found"
 
-        # Run the C++ executable and capture its output
-        result = subprocess.run([EXECUTABLE_PATH], capture_output=True, text=True, check=False)
+        # Run the C++ executable and capture its output (compatible with older Python 3)
+        result = subprocess.run([EXECUTABLE_PATH],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                check=False) # Don't raise exception on non-zero exit
+
+        # Decode stdout and stderr from bytes to string
+        stdout_str = result.stdout.decode('utf-8', errors='ignore')
+        stderr_str = result.stderr.decode('utf-8', errors='ignore')
+
 
         if result.returncode != 0:
-            print(f"Error running CUDA pipeline:")
-            print(result.stderr)
+            print(f"Error running CUDA pipeline (return code: {result.returncode}):")
+            print(stderr_str)
             return None, f"Pipeline Error (Code: {result.returncode})"
 
         # Parse the output to find the edge count
-        output_lines = result.stdout.splitlines()
+        output_lines = stdout_str.splitlines()
         edge_count = None
-        error_msg = "Edge count not found"
+        error_msg = "Edge count not found" # Default error
 
         # Look for the line containing "Detected Edge Pixels"
         for line in output_lines:
@@ -39,12 +47,15 @@ def run_cuda_pipeline():
                  error_msg = "" # Found it, clear error message
                  break # Stop searching once found
 
-        if edge_count is None:
+        if edge_count is None and result.returncode == 0: # Only print warning if C++ didn't report an error
              print(f"Warning: Could not parse edge count from C++ output.")
-             # Print full output if parsing failed
+             # Print full output if parsing failed but C++ exited cleanly
              print("--- C++ Full Output ---")
-             print(result.stdout)
+             print(stdout_str)
              print("-----------------------")
+        elif edge_count is None and result.returncode != 0:
+             # If C++ failed and we couldn't parse, the error is already printed
+             pass # error_msg remains "Pipeline Error..."
 
 
         return edge_count, error_msg
