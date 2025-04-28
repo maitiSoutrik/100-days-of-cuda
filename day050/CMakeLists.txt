@@ -40,10 +40,11 @@ cuda_add_executable(vector_add_test
 # Link dependencies
 # Note: Use ${CUDA_LIBRARIES} as specified in .clinerules
 # gtest and gtest_main targets are made available by FetchContent_MakeAvailable(googletest)
-target_link_libraries(vector_add_test PRIVATE
+# Using plain signature to match potential internal linking style of CUDA libraries
+target_link_libraries(vector_add_test
   gtest             # Google Test library
   gtest_main        # Provides main() for Google Test
-  CUDA::cudart      # Modern CUDA Runtime library target
+  ${CUDA_LIBRARIES} # CUDA Runtime library (as per .clinerules & user feedback)
   m                 # Math library, if needed (often implicitly linked, but good practice)
 )
 
