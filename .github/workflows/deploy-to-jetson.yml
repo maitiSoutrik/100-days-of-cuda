@@ -6,7 +6,8 @@ on:
   workflow_dispatch:  # Allows manual triggering
 
 jobs:
-  deploy:
+  build_and_test:
+    name: Build and Test on Jetson
     runs-on: self-hosted
     steps:
       - name: Checkout code
@@ -19,54 +20,92 @@ jobs:
           chmod 600 ~/.ssh/jetson_ci_key_nopass
           ssh-keyscan -H 192.168.1.184 >> ~/.ssh/known_hosts
           # Test SSH connection
-          ssh -i ~/.ssh/jetson_ci_key_nopass -o StrictHostKeyChecking=no -o BatchMode=yes drboom@192.168.1.184 echo "SSH connection successful" || { echo "SSH connection failed"; exit 1; }
+          ssh -i ~/.ssh/jetson_ci_key_nopass -o StrictHostKeyChecking=no -o BatchMode=yes drboom@192.168.1.184 echo "SSH connection successful for build/test" || { echo "SSH connection failed"; exit 1; }
 
-      - name: Deploy to Jetson Nano
+      - name: Build and Test on Jetson Nano
         run: |
-          # Create a deployment script
-          cat > deploy.sh << 'EOL'
+          # Create a build/test script
+          cat > build_test.sh << 'EOL'
           #!/bin/bash
           set -e
 
           # Define variables
           REPO_DIR="/home/drboom/git_repos/100-days-of-cuda"
           BUILD_DIR="${REPO_DIR}/build"
+          BRANCH_NAME="${{ github.ref_name }}" # Get branch name from GitHub context
 
           # Create repository directory if it doesn't exist
           if [ ! -d "${REPO_DIR}" ]; then
             echo "Creating repository directory..."
             mkdir -p "${REPO_DIR}"
             cd "${REPO_DIR}"
-            git clone https://github.com/maitiSoutrik/100-days-of-cuda.git .
+            # Clone the specific branch being pushed
+            git clone --branch "${BRANCH_NAME}" https://github.com/maitiSoutrik/100-days-of-cuda.git .
           else
             # Update repository
-            echo "Updating repository..."
+            echo "Updating repository to branch ${BRANCH_NAME}..."
             cd "${REPO_DIR}"
-            git fetch
-            git pull origin development # Or use the branch being pushed
+            git fetch origin
+            git checkout "${BRANCH_NAME}"
+            git pull origin "${BRANCH_NAME}"
           fi
 
           # Create build directory if it doesn't exist
           mkdir -p "${BUILD_DIR}"
 
-          # Build the latest code
-          echo "Building latest code..."
+          # Configure with CMake
+          echo "Configuring CMake..."
           cd "${BUILD_DIR}"
           cmake ..
 
-          # Create logs directory if it doesn't exist
-          LOGS_DIR="${REPO_DIR}/logs"
-          mkdir -p "${LOGS_DIR}"
-
-          # Build and run all days' code
-          # First, build all projects
+          # Build all projects
           echo "Building all projects..."
-          cd "${BUILD_DIR}"
           cmake --build . # Build all targets
 
           # Run all discovered tests
           echo "Running tests..."
-          ctest --output-on-failure || echo "CTest failed, continuing with execution..." # Run tests, allow script to continue even if tests fail for now
+          ctest -V --output-on-failure # Use verbose output, fail job on test failure
+          echo "Tests completed successfully."
+
+          EOL
+
+          # Copy and execute the build/test script on the Jetson Nano
+          chmod +x build_test.sh
+          scp -i ~/.ssh/jetson_ci_key_nopass build_test.sh drboom@192.168.1.184:~/build_test.sh
+          ssh -i ~/.ssh/jetson_ci_key_nopass drboom@192.168.1.184 "chmod +x ~/build_test.sh && ~/build_test.sh && rm ~/build_test.sh"
+
+  deploy:
+    name: Run Executables on Jetson
+    runs-on: self-hosted
+    needs: build_and_test # Run only if build_and_test succeeds
+    steps:
+      # No checkout needed here, assumes code is already on Jetson from previous job
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.JETSON_SSH_KEY }}" > ~/.ssh/jetson_ci_key_nopass
+          chmod 600 ~/.ssh/jetson_ci_key_nopass
+          ssh-keyscan -H 192.168.1.184 >> ~/.ssh/known_hosts
+          # Test SSH connection
+          ssh -i ~/.ssh/jetson_ci_key_nopass -o StrictHostKeyChecking=no -o BatchMode=yes drboom@192.168.1.184 echo "SSH connection successful for deploy" || { echo "SSH connection failed"; exit 1; }
+
+      - name: Run Executables on Jetson Nano
+        run: |
+          # Create a run script (no build/test steps)
+          cat > run_execs.sh << 'EOL'
+          #!/bin/bash
+          set -e
+
+          # Define variables
+          REPO_DIR="/home/drboom/git_repos/100-days-of-cuda"
+          BUILD_DIR="${REPO_DIR}/build"
+          LOGS_DIR="${REPO_DIR}/logs"
+
+          # Ensure logs directory exists
+          mkdir -p "${LOGS_DIR}"
+
+          echo "Running executables..."
+          cd "${BUILD_DIR}" # Start from build dir
 
           # Get all day directories
           DAY_DIRS=$(ls -d ${REPO_DIR}/day* | sort -V)
@@ -80,99 +119,103 @@ jobs:
               if [ -d "${BUILD_DAY_DIR}" ]; then
                 echo "\n===== Processing ${DAY_NAME} =====\n"
 
-                # Find all executable files in the directory
+                # Find all executable files in the directory, EXCLUDING test executables
                 cd "${BUILD_DAY_DIR}"
-              EXECUTABLES=$(find . -type f -executable -not -path "*/\.*" | sort)
+                # Exclude files ending in '_test'
+                EXECUTABLES=$(find . -type f -executable -not -path "*/\.*" -not -name '*_test' | sort)
 
-              # Run each executable and capture output
-              for EXEC in $EXECUTABLES; do
-                EXEC_NAME=$(basename "${EXEC}")
-                echo "Running ${EXEC_NAME}..."
-                LOG_FILE="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}.log"
 
-                # Run the executable and capture both stdout and stderr
-                # Specific handling for executables needing arguments
-                if [[ "${EXEC_NAME}" == "passthrough_filter" && "${DAY_NAME}" == "day025" ]]; then
-                  echo "Running passthrough_filter with specific arguments..."
-                  ${EXEC} /home/drboom/cuda-data-sets/table_scene_ascii.pcd filtered_output.pcd 0.0 1.5 0.0 1.2 > "${LOG_FILE}" 2>&1
-                  sleep 5
-                elif [[ "${EXEC_NAME}" == "k_means_assignment" && "${DAY_NAME}" == "day029" ]]; then
-                  # Run day029/k_means_assignment with synthetic data
-                  echo "Running k_means_assignment (synthetic)..."
-                  LOG_FILE_SYNTH="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}_synthetic.log"
-                  ${EXEC} --clusters 5 --points 10000 > "${LOG_FILE_SYNTH}" 2>&1
-                  echo "Output preview (synthetic) (see ${LOG_FILE_SYNTH} for full output):"
-                  head -n 20 "${LOG_FILE_SYNTH}"
-                  echo ""
-                  sleep 5
+                # Run each executable and capture output
+                for EXEC in $EXECUTABLES; do
+                  # Ensure EXEC is a relative path from BUILD_DAY_DIR
+                  REL_EXEC_PATH=$(realpath --relative-to="${BUILD_DAY_DIR}" "${EXEC}")
+                  EXEC_NAME=$(basename "${REL_EXEC_PATH}")
 
-                  # Run day029/k_means_assignment with Aggregation.txt
-                  echo "Running k_means_assignment (Aggregation.txt)..."
-                  LOG_FILE_AGG="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}_aggregation.log"
-                  ${EXEC} --clusters 7 --mode file --input /home/drboom/cuda-data-sets/kmeans_data/Aggregation.txt --output ${BUILD_DAY_DIR}/assignments_aggregation.txt > "${LOG_FILE_AGG}" 2>&1
-                  echo "Output preview (Aggregation.txt) (see ${LOG_FILE_AGG} for full output):"
-                  head -n 20 "${LOG_FILE_AGG}"
-                  echo ""
-                  sleep 5
+                  echo "Running ${EXEC_NAME}..."
+                  LOG_FILE="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}.log"
 
-                  # Run day029/k_means_assignment with Compound.txt
-                  echo "Running k_means_assignment (Compound.txt)..."
-                  LOG_FILE_COMP="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}_compound.log"
-                  ${EXEC} --clusters 6 --mode file --input /home/drboom/cuda-data-sets/kmeans_data/Compound.txt --output ${BUILD_DAY_DIR}/assignments_compound.txt > "${LOG_FILE_COMP}" 2>&1
-                  echo "Output preview (Compound.txt) (see ${LOG_FILE_COMP} for full output):"
-                  head -n 20 "${LOG_FILE_COMP}"
-                  echo ""
-                  sleep 5
-
-                  continue # Skip the default logging/preview below for this special case
-                elif [[ "${EXEC_NAME}" == "voxel_filter" && "${DAY_NAME}" == "day034" ]]; then
-                  echo "Running voxel_filter with specific arguments..."
-                  VOXEL_SIZE="0.05"
-                  PCD_FILE="/home/drboom/cuda-data-sets/table_scene_ascii.pcd"
-                  ${EXEC} "${PCD_FILE}" ${VOXEL_SIZE} ${VOXEL_SIZE} ${VOXEL_SIZE} > "${LOG_FILE}" 2>&1
-                  sleep 5
-                elif [[ "${EXEC_NAME}" == "kalman_predict" && "${DAY_NAME}" == "day035" ]]; then
-                  echo "Running kalman_predict with specific arguments..."
-                  DATA_FILE="/home/drboom/cuda-data-sets/imu-data.csv"
-                  ${EXEC} "${DATA_FILE}" > "${LOG_FILE}" 2>&1
-                  sleep 5
-                # Add specific handling for Day 40 file input
-                elif [[ "${EXEC_NAME}" == "texture_interpolation" && "${DAY_NAME}" == "day040" ]]; then
-                    echo "Running ${EXEC_NAME} with default file input..."
-                    ${EXEC} > "${LOG_FILE}" 2>&1 # Default uses lena_gray.png
-                    # Could add a camera run here too if desired for full CI log
-                    LOG_FILE_CAM="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}_camera.log"
-                    echo "Running ${EXEC_NAME} with camera input (index 0)..."
-                    ${EXEC} --camera 0 > "${LOG_FILE_CAM}" 2>&1 & # Run camera test in background? Or sequentially? Sequential is simpler.
-                    echo "Camera test output logged to ${LOG_FILE_CAM}"
-                    sleep 5 # Give camera test some time
-                else
-                  # Default run for other executables
-                  echo "Running ${EXEC_NAME} (default)..."
-                  ${EXEC} > "${LOG_FILE}" 2>&1
-                  sleep 15 # Longer sleep for potentially longer default runs
-                fi
-
-                # Print the first few lines of output (check if log file exists first)
-                if [ -f "${LOG_FILE}" ]; then
-                    echo "Output preview (see ${LOG_FILE} for full output):"
-                    head -n 20 "${LOG_FILE}"
+                  # Run the executable and capture both stdout and stderr
+                  # Specific handling for executables needing arguments
+                  if [[ "${EXEC_NAME}" == "passthrough_filter" && "${DAY_NAME}" == "day025" ]]; then
+                    echo "Running passthrough_filter with specific arguments..."
+                    ./${REL_EXEC_PATH} /home/drboom/cuda-data-sets/table_scene_ascii.pcd filtered_output.pcd 0.0 1.5 0.0 1.2 > "${LOG_FILE}" 2>&1
+                    sleep 5
+                  elif [[ "${EXEC_NAME}" == "k_means_assignment" && "${DAY_NAME}" == "day029" ]]; then
+                    # Run day029/k_means_assignment with synthetic data
+                    echo "Running k_means_assignment (synthetic)..."
+                    LOG_FILE_SYNTH="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}_synthetic.log"
+                    ./${REL_EXEC_PATH} --clusters 5 --points 10000 > "${LOG_FILE_SYNTH}" 2>&1
+                    echo "Output preview (synthetic) (see ${LOG_FILE_SYNTH} for full output):"
+                    head -n 20 "${LOG_FILE_SYNTH}"
                     echo ""
-                else
-                    echo "Warning: Log file ${LOG_FILE} not found after running ${EXEC_NAME}."
-                fi
+                    sleep 5
 
-              done # End executable loop
-            else
-              echo "Skipping ${DAY_NAME} - no build directory found"
-            fi
-          done # End day loop
+                    # Run day029/k_means_assignment with Aggregation.txt
+                    echo "Running k_means_assignment (Aggregation.txt)..."
+                    LOG_FILE_AGG="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}_aggregation.log"
+                    ./${REL_EXEC_PATH} --clusters 7 --mode file --input /home/drboom/cuda-data-sets/kmeans_data/Aggregation.txt --output ${BUILD_DAY_DIR}/assignments_aggregation.txt > "${LOG_FILE_AGG}" 2>&1
+                    echo "Output preview (Aggregation.txt) (see ${LOG_FILE_AGG} for full output):"
+                    head -n 20 "${LOG_FILE_AGG}"
+                    echo ""
+                    sleep 5
 
-          echo "Deployment complete! All binaries have been built and run."
-          echo "Logs are available in ${LOGS_DIR}"
+                    # Run day029/k_means_assignment with Compound.txt
+                    echo "Running k_means_assignment (Compound.txt)..."
+                    LOG_FILE_COMP="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}_compound.log"
+                    ./${REL_EXEC_PATH} --clusters 6 --mode file --input /home/drboom/cuda-data-sets/kmeans_data/Compound.txt --output ${BUILD_DAY_DIR}/assignments_compound.txt > "${LOG_FILE_COMP}" 2>&1
+                    echo "Output preview (Compound.txt) (see ${LOG_FILE_COMP} for full output):"
+                    head -n 20 "${LOG_FILE_COMP}"
+                    echo ""
+                    sleep 5
+
+                    continue # Skip the default logging/preview below for this special case
+                  elif [[ "${EXEC_NAME}" == "voxel_filter" && "${DAY_NAME}" == "day034" ]]; then
+                    echo "Running voxel_filter with specific arguments..."
+                    VOXEL_SIZE="0.05"
+                    PCD_FILE="/home/drboom/cuda-data-sets/table_scene_ascii.pcd"
+                    ./${REL_EXEC_PATH} "${PCD_FILE}" ${VOXEL_SIZE} ${VOXEL_SIZE} ${VOXEL_SIZE} > "${LOG_FILE}" 2>&1
+                    sleep 5
+                  elif [[ "${EXEC_NAME}" == "kalman_predict" && "${DAY_NAME}" == "day035" ]]; then
+                    echo "Running kalman_predict with specific arguments..."
+                    DATA_FILE="/home/drboom/cuda-data-sets/imu-data.csv"
+                    ./${REL_EXEC_PATH} "${DATA_FILE}" > "${LOG_FILE}" 2>&1
+                    sleep 5
+                  # Add specific handling for Day 40 file input
+                  elif [[ "${EXEC_NAME}" == "texture_interpolation" && "${DAY_NAME}" == "day040" ]]; then
+                      echo "Running ${EXEC_NAME} with default file input..."
+                      ./${REL_EXEC_PATH} > "${LOG_FILE}" 2>&1 # Default uses lena_gray.png
+                      # Could add a camera run here too if desired for full CI log
+                      LOG_FILE_CAM="${LOGS_DIR}/${DAY_NAME}_${EXEC_NAME}_camera.log"
+                      echo "Running ${EXEC_NAME} with camera input (index 0)..."
+                      ./${REL_EXEC_PATH} --camera 0 > "${LOG_FILE_CAM}" 2>&1 & # Run camera test in background? Or sequentially? Sequential is simpler.
+                      echo "Camera test output logged to ${LOG_FILE_CAM}"
+                      sleep 5 # Give camera test some time
+                  else
+                    # Default run for other executables
+                    echo "Running ${EXEC_NAME} (default)..."
+                    ./${REL_EXEC_PATH} > "${LOG_FILE}" 2>&1
+                    sleep 15 # Longer sleep for potentially longer default runs
+                  fi
+
+                  # Print the first few lines of output (check if log file exists first)
+                  if [ -f "${LOG_FILE}" ]; then
+                      echo "Output preview (see ${LOG_FILE} for full output):"
+                      head -n 20 "${LOG_FILE}"
+                      echo ""
+                  else
+                      echo "Warning: Log file ${LOG_FILE} not found after running ${EXEC_NAME}."
+                  fi
+
+                done # End executable loop
+              else
+                echo "Skipping ${DAY_NAME} - no build directory found"
+              fi
+            done # End day loop
+
+          echo "Execution run complete! Logs are available in ${LOGS_DIR}"
           EOL
 
-          # Copy and execute the deployment script on the Jetson Nano
-          chmod +x deploy.sh
-          scp -i ~/.ssh/jetson_ci_key_nopass deploy.sh drboom@192.168.1.184:~/deploy.sh
-          ssh -i ~/.ssh/jetson_ci_key_nopass drboom@192.168.1.184 "chmod +x ~/deploy.sh && ~/deploy.sh && rm ~/deploy.sh"
+          # Copy and execute the run script on the Jetson Nano
+          chmod +x run_execs.sh
+          scp -i ~/.ssh/jetson_ci_key_nopass run_execs.sh drboom@192.168.1.184:~/run_execs.sh
+          ssh -i ~/.ssh/jetson_ci_key_nopass drboom@192.168.1.184 "chmod +x ~/run_execs.sh && ~/run_execs.sh && rm ~/run_execs.sh"
