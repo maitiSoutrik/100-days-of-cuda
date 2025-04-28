@@ -32,9 +32,10 @@ FetchContent_MakeAvailable(googletest)
 
 # --- Build Test Executable ---
 # cuda_add_executable handles mixing CUDA (.cu) and C++ (.cpp) sources
+# Note: vector_add_test.cu now used instead of .cpp to ensure NVCC compilation
 cuda_add_executable(vector_add_test
   vector_add_kernel.cu
-  vector_add_test.cpp
+  vector_add_test.cu
 )
 
 # Link dependencies
