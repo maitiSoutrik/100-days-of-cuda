@@ -41,20 +41,25 @@ The primary focus here is correctness, not performance benchmarking. However, th
     ```bash
     cmake .. 
     ```
-    *(CMake should detect Day 50, download Google Test, and configure the build)*
-3.  **Build the Test Executable:**
+    *(CMake should detect Day 50, download Google Test, and configure the build for both demo and test executables)*
+3.  **Build Executables:**
     ```bash
-    cmake --build . --target vector_add_test -j$(nproc) 
+    # Build both targets (or build all with just 'cmake --build .')
+    cmake --build . --target vector_add_demo --target vector_add_test -j$(nproc) 
     ```
-    *(Or use `make vector_add_test`)*
-4.  **Run Tests using CTest:**
+    *(Or use `make vector_add_demo vector_add_test`)*
+4.  **Run Demonstration:**
+    ```bash
+    ./day050/vector_add_demo
+    ```
+5.  **Run Tests using CTest:**
     ```bash
     # Ensure you are in the build directory
     ctest --output-on-failure -R vector_add_test 
     ```
     *(This command specifically runs tests associated with the `vector_add_test` target)*
     
-    Alternatively, run the executable directly to see Google Test output:
+    Alternatively, run the test executable directly to see Google Test output:
     ```bash
     ./day050/vector_add_test
     ```
