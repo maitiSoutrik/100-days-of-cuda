@@ -43,7 +43,7 @@ cuda_add_executable(vector_add_test
 target_link_libraries(vector_add_test PRIVATE
   gtest             # Google Test library
   gtest_main        # Provides main() for Google Test
-  ${CUDA_LIBRARIES} # CUDA Runtime library
+  CUDA::cudart      # Modern CUDA Runtime library target
   m                 # Math library, if needed (often implicitly linked, but good practice)
 )
 
