@@ -71,6 +71,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 47  | 2025-04-25 | Dynamic Parallelism (Simple Example) | [Link](./day047/) | :heavy_check_mark: |
 | 48  | 2025-04-26 | Parallel AABB Collision Detection | [Link](./day048/) |                    |
 | 49  | 2025-04-27 | Mini-Project: Perception Pipeline (Grayscale -> Blur -> Sobel -> Reduction) | [Link](./day049/) | :heavy_check_mark: |
+| 50  | 2025-04-28 | Unit Testing CUDA Kernels with Google Test | [Link](./day050/) | :heavy_check_mark: |
 
 ## Rules
 
