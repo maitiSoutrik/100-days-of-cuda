@@ -64,6 +64,10 @@ jobs:
           cd "${BUILD_DIR}"
           cmake --build . # Build all targets
 
+          # Run all discovered tests
+          echo "Running tests..."
+          ctest --output-on-failure || echo "CTest failed, continuing with execution..." # Run tests, allow script to continue even if tests fail for now
+
           # Get all day directories
           DAY_DIRS=$(ls -d ${REPO_DIR}/day* | sort -V)
 
