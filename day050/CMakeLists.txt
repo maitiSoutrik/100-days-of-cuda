@@ -30,15 +30,29 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE) # Needed on Windows, harmless elsewhere
 FetchContent_MakeAvailable(googletest)
 
-# --- Build Test Executable ---
+# --- Build Executables ---
+
+# 1. Demonstration Executable (Standalone)
+cuda_add_executable(vector_add_demo
+  vector_add_kernel.cu
+  vector_add_main.cu
+)
+target_link_libraries(vector_add_demo
+  ${CUDA_LIBRARIES}
+  m
+)
+message(STATUS "Demo executable: vector_add_demo")
+
+
+# 2. Test Executable (Google Test)
 # cuda_add_executable handles mixing CUDA (.cu) and C++ (.cpp) sources
 # Note: vector_add_test.cu now used instead of .cpp to ensure NVCC compilation
 cuda_add_executable(vector_add_test
-  vector_add_kernel.cu
+  vector_add_kernel.cu # Re-use the kernel code
   vector_add_test.cu
 )
 
-# Link dependencies
+# Link dependencies for the test executable
 # Note: Use ${CUDA_LIBRARIES} as specified in .clinerules
 # gtest and gtest_main targets are made available by FetchContent_MakeAvailable(googletest)
 # Using plain signature to match potential internal linking style of CUDA libraries
@@ -48,6 +62,8 @@ target_link_libraries(vector_add_test
   ${CUDA_LIBRARIES} # CUDA Runtime library (as per .clinerules & user feedback)
   m                 # Math library, if needed (often implicitly linked, but good practice)
 )
+message(STATUS "Test executable: vector_add_test")
+
 
 # --- Testing Configuration ---
 # Enable testing for this directory and subdirectories
@@ -58,8 +74,7 @@ include(GoogleTest)
 gtest_discover_tests(vector_add_test)
 
 # --- Output ---
-message(STATUS "Configuring Day 50: CUDA Unit Testing with Google Test")
+message(STATUS "Configuring Day 50: CUDA Demo and Unit Testing with Google Test")
 message(STATUS "CUDA Architectures: ${CMAKE_CUDA_ARCHITECTURES}")
-message(STATUS "Test executable: vector_add_test")
 message(STATUS "Google Test Source Dir: ${googletest_SOURCE_DIR}")
 message(STATUS "Google Test Binary Dir: ${googletest_BINARY_DIR}")
