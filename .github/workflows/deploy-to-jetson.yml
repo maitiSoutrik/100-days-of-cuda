@@ -62,6 +62,10 @@ jobs:
           echo "Building all projects..."
           cmake --build . # Build all targets
 
+          # Re-run CMake to ensure test discovery (gtest_discover_tests) after build
+          echo "Re-running CMake to ensure test discovery..."
+          cmake ..
+
           # Run all discovered tests
           echo "Running tests..."
           ctest -V --output-on-failure # Use verbose output, fail job on test failure
