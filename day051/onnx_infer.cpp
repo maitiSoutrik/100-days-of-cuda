@@ -9,7 +9,6 @@
 #include <fstream>
 #include <vector>
 #include <cassert>
-#include <memory>
 
 // Error checking macro for CUDA
 #define CHECK_CUDA(status) \
@@ -43,21 +42,24 @@ std::vector<char> readFile(const std::string& filename) {
 int main() {
     Logger logger;
 
-    // 1. Create builder, network, and parser
-    auto builder = std::unique_ptr<nvinfer1::IBuilder>(nvinfer1::createInferBuilder(logger));
+    // 1. Create builder, network, and parser (use raw pointers, destroy manually)
+    nvinfer1::IBuilder* builder = nvinfer1::createInferBuilder(logger);
     if (!builder) {
         std::cerr << "Failed to create TensorRT builder." << std::endl;
         return 1;
     }
     const auto explicitBatch = 1U << static_cast<uint32_t>(nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);
-    auto network = std::unique_ptr<nvinfer1::INetworkDefinition>(builder->createNetworkV2(explicitBatch));
-    auto parser = std::unique_ptr<nvonnxparser::IParser>(nvonnxparser::createParser(*network, logger));
+    nvinfer1::INetworkDefinition* network = builder->createNetworkV2(explicitBatch);
+    nvonnxparser::IParser* parser = nvonnxparser::createParser(*network, logger);
 
     // 2. Parse ONNX model
-    const std::string onnx_filename = "/home/drboom/cuda-data-sets/mnist.onnx"; // Place your ONNX model here
+    const std::string onnx_filename = "/home/drboom/cuda-data-sets/mnist.onnx"; // Use your ONNX model path
     std::cout << "Parsing ONNX model: " << onnx_filename << std::endl;
     if (!parser->parseFromFile(onnx_filename.c_str(), static_cast<int>(nvinfer1::ILogger::Severity::kWARNING))) {
         std::cerr << "Failed to parse ONNX model." << std::endl;
+        parser->destroy();
+        network->destroy();
+        builder->destroy();
         return 1;
     }
 
@@ -66,17 +68,25 @@ int main() {
     nvinfer1::IBuilderConfig* config = builder->createBuilderConfig();
     config->setMaxWorkspaceSize(1 << 20); // 1 MiB
     std::cout << "Building TensorRT engine..." << std::endl;
-    auto engine = std::unique_ptr<nvinfer1::ICudaEngine>(builder->buildEngineWithConfig(*network, *config));
+    nvinfer1::ICudaEngine* engine = builder->buildEngineWithConfig(*network, *config);
     if (!engine) {
         std::cerr << "Failed to build engine." << std::endl;
+        config->destroy();
+        parser->destroy();
+        network->destroy();
+        builder->destroy();
         return 1;
     }
-    delete config;
+    config->destroy();
 
     // 4. Create execution context
-    auto context = std::unique_ptr<nvinfer1::IExecutionContext>(engine->createExecutionContext());
+    nvinfer1::IExecutionContext* context = engine->createExecutionContext();
     if (!context) {
         std::cerr << "Failed to create execution context." << std::endl;
+        engine->destroy();
+        parser->destroy();
+        network->destroy();
+        builder->destroy();
         return 1;
     }
 
@@ -96,8 +106,8 @@ int main() {
 
     float* inputDevice = nullptr;
     float* outputDevice = nullptr;
-    CHECK_CUDA(cudaMalloc(&inputDevice, inputSize * sizeof(float)));
-    CHECK_CUDA(cudaMalloc(&outputDevice, outputSize * sizeof(float)));
+    CHECK_CUDA(cudaMalloc((void**)&inputDevice, inputSize * sizeof(float)));
+    CHECK_CUDA(cudaMalloc((void**)&outputDevice, outputSize * sizeof(float)));
 
     // 6. Copy input to device
     CHECK_CUDA(cudaMemcpy(inputDevice, inputHost.data(), inputSize * sizeof(float), cudaMemcpyHostToDevice));
@@ -108,6 +118,13 @@ int main() {
     bool success = context->executeV2(bindings);
     if (!success) {
         std::cerr << "Inference failed." << std::endl;
+        cudaFree(inputDevice);
+        cudaFree(outputDevice);
+        context->destroy();
+        engine->destroy();
+        parser->destroy();
+        network->destroy();
+        builder->destroy();
         return 1;
     }
 
@@ -124,6 +141,11 @@ int main() {
     // 10. Cleanup
     cudaFree(inputDevice);
     cudaFree(outputDevice);
+    context->destroy();
+    engine->destroy();
+    parser->destroy();
+    network->destroy();
+    builder->destroy();
 
     std::cout << "Inference complete." << std::endl;
     return 0;
