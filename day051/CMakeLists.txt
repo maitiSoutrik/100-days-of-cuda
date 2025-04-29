@@ -14,16 +14,21 @@ find_path(TENSORRT_INCLUDE_DIR NvInfer.h
     PATHS /usr/include/x86_64-linux-gnu /usr/include /usr/local/include /usr/src/tensorrt/include
 )
 find_library(TENSORRT_LIBRARIES nvinfer
-    PATHS /usr/lib/x86_64-linux-gnu /usr/lib /usr/local/lib /usr/src/tensorrt/lib
+    PATHS /usr/lib/x86_64-linux-gnu /usr/lib /usr/local/lib /usr/src/tensorrt/lib /usr/lib/aarch64-linux-gnu
 )
 
-if(NOT TENSORRT_INCLUDE_DIR OR NOT TENSORRT_LIBRARIES)
-    message(FATAL_ERROR "TensorRT not found. Please install TensorRT and set TENSORRT_INCLUDE_DIR and TENSORRT_LIBRARIES.")
+# Find ONNX parser library
+find_library(TENSORRT_ONNXPARSER_LIB nvonnxparser
+    PATHS /usr/lib/x86_64-linux-gnu /usr/lib /usr/local/lib /usr/src/tensorrt/lib /usr/lib/aarch64-linux-gnu
+)
+
+if(NOT TENSORRT_INCLUDE_DIR OR NOT TENSORRT_LIBRARIES OR NOT TENSORRT_ONNXPARSER_LIB)
+    message(FATAL_ERROR "TensorRT or ONNX parser not found. Please install TensorRT and set TENSORRT_INCLUDE_DIR, TENSORRT_LIBRARIES, and TENSORRT_ONNXPARSER_LIB.")
 endif()
 
 include_directories(${CUDA_INCLUDE_DIRS} ${TENSORRT_INCLUDE_DIR})
 
 add_executable(onnx_infer onnx_infer.cpp)
-target_link_libraries(onnx_infer ${CUDA_LIBRARIES} ${TENSORRT_LIBRARIES})
+target_link_libraries(onnx_infer ${CUDA_LIBRARIES} ${TENSORRT_LIBRARIES} ${TENSORRT_ONNXPARSER_LIB})
 
 # If you use other TensorRT libs (e.g., nvinfer_plugin), add them here
