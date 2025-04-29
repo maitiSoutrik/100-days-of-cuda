@@ -39,8 +39,13 @@ std::vector<char> readFile(const std::string& filename) {
     return buffer;
 }
 
+#include <chrono>
+
 int main() {
     Logger logger;
+
+    constexpr int NUM_RUNS = 100; // Number of benchmarking runs
+    // constexpr int BATCH_SIZE = 1; // For larger batch, update this and ONNX model accordingly
 
     // 1. Create builder, network, and parser (use raw pointers, destroy manually)
     nvinfer1::IBuilder* builder = nvinfer1::createInferBuilder(logger);
@@ -112,23 +117,34 @@ int main() {
     // 6. Copy input to device
     CHECK_CUDA(cudaMemcpy(inputDevice, inputHost.data(), inputSize * sizeof(float), cudaMemcpyHostToDevice));
 
-    // 7. Run inference
+    // 7. Run inference (with benchmarking)
     void* bindings[2] = {inputDevice, outputDevice};
-    std::cout << "Running inference..." << std::endl;
-    bool success = context->executeV2(bindings);
-    if (!success) {
-        std::cerr << "Inference failed." << std::endl;
-        cudaFree(inputDevice);
-        cudaFree(outputDevice);
-        context->destroy();
-        engine->destroy();
-        parser->destroy();
-        network->destroy();
-        builder->destroy();
-        return 1;
-    }
+    std::cout << "Running inference " << NUM_RUNS << " times for benchmarking..." << std::endl;
 
-    // 8. Copy output back to host
+    // Warm-up run (optional, helps with more stable timing)
+    context->executeV2(bindings);
+
+    auto start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < NUM_RUNS; ++i) {
+        bool success = context->executeV2(bindings);
+        if (!success) {
+            std::cerr << "Inference failed at iteration " << i << std::endl;
+            cudaFree(inputDevice);
+            cudaFree(outputDevice);
+            context->destroy();
+            engine->destroy();
+            parser->destroy();
+            network->destroy();
+            builder->destroy();
+            return 1;
+        }
+    }
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed = end - start;
+    double avg_time = elapsed.count() / NUM_RUNS;
+    std::cout << "Average inference time over " << NUM_RUNS << " runs: " << avg_time << " ms" << std::endl;
+
+    // 8. Copy output back to host (from last run)
     CHECK_CUDA(cudaMemcpy(outputHost.data(), outputDevice, outputSize * sizeof(float), cudaMemcpyDeviceToHost));
 
     // 9. Print output (e.g., classification scores)
