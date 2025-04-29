@@ -31,20 +31,28 @@ include_directories(${CUDA_INCLUDE_DIRS} ${TENSORRT_INCLUDE_DIR})
 add_executable(onnx_infer onnx_infer.cpp)
 target_link_libraries(onnx_infer ${CUDA_LIBRARIES} ${TENSORRT_LIBRARIES} ${TENSORRT_ONNXPARSER_LIB})
 
-# Google Test integration for CI
-find_package(GTest REQUIRED)
-include_directories(${GTEST_INCLUDE_DIRS})
+# --- Google Test integration for CI (FetchContent) ---
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
+enable_testing()
 
 add_executable(onnx_infer_test onnx_infer_test.cpp)
 target_link_libraries(onnx_infer_test
     ${CUDA_LIBRARIES}
     ${TENSORRT_LIBRARIES}
     ${TENSORRT_ONNXPARSER_LIB}
-    GTest::GTest
-    GTest::Main
+    gtest
+    gtest_main
     pthread
 )
 
-add_test(NAME OnnxInferTest COMMAND onnx_infer_test)
+include(GoogleTest)
+gtest_discover_tests(onnx_infer_test)
 
 # If you use other TensorRT libs (e.g., nvinfer_plugin), add them here
