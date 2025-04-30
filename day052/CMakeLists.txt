@@ -19,13 +19,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 find_package(CUDA REQUIRED)
 find_package(GTest REQUIRED) # Find Google Test
 
-# Create an object library from the main source file
-# This allows linking its compiled code into both the main executable and the test executable
-# without compiling it twice.
-add_library(min_gru_scan_lib OBJECT min_gru_scan.cu)
-
-# Add the main executable target, linking the object library
-add_executable(min_gru_scan $<TARGET_OBJECTS:min_gru_scan_lib>)
+# Add the main executable target directly from its source file
+cuda_add_executable(min_gru_scan min_gru_scan.cu)
 
 # Link libraries (using plain signature for consistency)
 # Using ${CUDA_LIBRARIES} as specified in .clinerules
@@ -38,10 +33,17 @@ install(TARGETS min_gru_scan DESTINATION bin/day052)
 
 # --- Google Test Integration ---
 if(TARGET GTest::gtest)
-    # Add the test executable target, linking the object library and GTest
-    cuda_add_executable(min_gru_scan_test min_gru_scan_test.cu $<TARGET_OBJECTS:min_gru_scan_lib>)
+    # Add the test executable target, including the implementation source file
+    # This compiles min_gru_scan.cu again, but links with gtest_main instead of its own main()
+    cuda_add_executable(min_gru_scan_test min_gru_scan_test.cu min_gru_scan.cu)
 
     # Link libraries for the test executable (using plain signature for consistency)
+    # IMPORTANT: Link the *implementations* needed by the tests if they aren't inline
+    # In this case, the core CUDA/CPU functions are declared in min_gru_scan.h
+    # and implemented in min_gru_scan.cu. We might need to link the object file
+    # from min_gru_scan.cu *without* its main().
+    # Let's try just linking the required libraries first. If it fails finding symbols,
+    # we might need a separate object library for the shared functions *excluding* main.
     target_link_libraries(min_gru_scan_test ${CUDA_LIBRARIES} m GTest::gtest GTest::gtest_main)
 
     # Add test to CTest
