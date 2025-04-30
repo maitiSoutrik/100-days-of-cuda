@@ -59,6 +59,8 @@ void free_linear_layer(LinearLayer* layer) {
         free(layer->bias);
         layer->weights = NULL;
         layer->bias = NULL;
+    }
+}
 // ============================================================================
 // MinGRU Specifics Implementations (Host functions)
 // ============================================================================
@@ -268,14 +270,10 @@ void min_gru_free_device(LinearLayer* d_linear_z, LinearLayer* d_linear_h) {
 // CUDA Parallel Scan Implementation (Adapted from min_gru_cuda.cu)
 // ============================================================================
 
-// CUDA implementation of the parallel scan algorithm for MinGRU recurrence
-// h_t = a_t * h_{t-1} + b_t
-// Inputs d_a, d_b, d_h0 are pointers to device memory
-// Output d_h_out is a pointer to device memory (will contain h_1 to h_seq_length)
+// Corrected version of the function
 void min_gru_parallel_scan_cuda(int seq_length, int batch_size, int hidden_size,
                                const float* d_a, const float* d_b, const float* d_h0,
                                float* d_h_out) {
-    // Note: Batch size is assumed to be 1 in this implementation, matching reference.
     if (batch_size != 1) {
         fprintf(stderr, "ERROR: Batch size > 1 not supported in this parallel scan implementation.\n");
         exit(EXIT_FAILURE);
@@ -284,160 +282,87 @@ void min_gru_parallel_scan_cuda(int seq_length, int batch_size, int hidden_size,
     size_t seq_hidden_size_bytes = (size_t)seq_length * hidden_size * sizeof(float);
     size_t hidden_size_bytes = (size_t)hidden_size * sizeof(float);
 
-    // CUDA kernel launch parameters
-    int threadsPerBlock = 256; // Common choice, adjust based on GPU
-    int blocksPerGrid = (hidden_size + threadsPerBlock - 1) / threadsPerBlock;
-    dim3 blockDim(threadsPerBlock);
-    dim3 gridDim(blocksPerGrid);
+    // Define launch params *locally* within the scope where they are needed
+    int threadsPerBlock_h = 256;
+    int blocksPerGrid_h = (hidden_size + threadsPerBlock_h - 1) / threadsPerBlock_h;
 
-    // For short sequences, a sequential application on GPU might be faster
-    // than the overhead of the parallel scan setup. Threshold can be tuned.
-    int sequential_threshold = 8; // From reference code
+    int sequential_threshold = 8;
     if (seq_length <= sequential_threshold) {
-        float *d_h_prev, *d_h_curr;
+        float *d_h_prev = NULL, *d_h_curr = NULL;
         CHECK_CUDA_ERROR(cudaMalloc((void**)&d_h_prev, hidden_size_bytes));
         CHECK_CUDA_ERROR(cudaMalloc((void**)&d_h_curr, hidden_size_bytes));
-
-        // Initialize h_prev with h0
         CHECK_CUDA_ERROR(cudaMemcpy(d_h_prev, d_h0, hidden_size_bytes, cudaMemcpyDeviceToDevice));
 
-        // Apply scan operation sequentially for each time step
         for (int t = 0; t < seq_length; t++) {
             const float* d_a_t = d_a + t * hidden_size;
             const float* d_b_t = d_b + t * hidden_size;
             float* d_h_out_t = d_h_out + t * hidden_size;
 
-            apply_scan_op_kernel<<<gridDim, blockDim>>>(d_a_t, d_b_t, d_h_prev, d_h_curr, hidden_size);
-            CHECK_CUDA_ERROR(cudaGetLastError()); // Check kernel launch
-
+            apply_scan_op_kernel<<<dim3(blocksPerGrid_h), dim3(threadsPerBlock_h)>>>(d_a_t, d_b_t, d_h_prev, d_h_curr, hidden_size);
+            CHECK_CUDA_ERROR(cudaGetLastError());
             CHECK_CUDA_ERROR(cudaMemcpy(d_h_out_t, d_h_curr, hidden_size_bytes, cudaMemcpyDeviceToDevice));
-            CHECK_CUDA_ERROR(cudaMemcpy(d_h_prev, d_h_curr, hidden_size_bytes, cudaMemcpyDeviceToDevice)); // Update h_prev
+            CHECK_CUDA_ERROR(cudaMemcpy(d_h_prev, d_h_curr, hidden_size_bytes, cudaMemcpyDeviceToDevice));
         }
-        CHECK_CUDA_ERROR(cudaDeviceSynchronize()); // Ensure all steps are done
-
+        CHECK_CUDA_ERROR(cudaDeviceSynchronize());
         CHECK_CUDA_ERROR(cudaFree(d_h_prev));
         CHECK_CUDA_ERROR(cudaFree(d_h_curr));
     } else {
-        // --- Parallel Scan Implementation (Tree-based approach from reference) ---
-        // This implementation seems slightly different from a standard Blelloch scan's down-sweep.
-        // It iteratively composes operations in an up-sweep and then applies them.
+        // Simplified iterative parallel scan (less efficient, easier to verify logic)
+        float* d_a_composed_prev = NULL;
+        float* d_b_composed_prev = NULL;
+        float* d_a_composed_curr = NULL;
+        float* d_b_composed_curr = NULL;
+        CHECK_CUDA_ERROR(cudaMalloc((void**)&d_a_composed_prev, hidden_size_bytes));
+        CHECK_CUDA_ERROR(cudaMalloc((void**)&d_b_composed_prev, hidden_size_bytes));
+        CHECK_CUDA_ERROR(cudaMalloc((void**)&d_a_composed_curr, hidden_size_bytes));
+        CHECK_CUDA_ERROR(cudaMalloc((void**)&d_b_composed_curr, hidden_size_bytes));
 
-        // Allocate temporary device memory for intermediate composed operations
-        // We need log2(seq_length) levels of temporary storage.
-        int num_levels = 0;
-        if (seq_length > 0) {
-            num_levels = (int)ceilf(log2f((float)seq_length));
-        }
+        // Init composed op for t=0
+        CHECK_CUDA_ERROR(cudaMemcpy(d_a_composed_prev, d_a, hidden_size_bytes, cudaMemcpyDeviceToDevice));
+        CHECK_CUDA_ERROR(cudaMemcpy(d_b_composed_prev, d_b, hidden_size_bytes, cudaMemcpyDeviceToDevice));
 
-        // Pointers to device memory for each level of the scan tree
-        float **d_a_levels = (float**)malloc((num_levels + 1) * sizeof(float*));
-        float **d_b_levels = (float**)malloc((num_levels + 1) * sizeof(float*));
-        if (!d_a_levels || !d_b_levels) {
-             fprintf(stderr, "ERROR: Failed to allocate host memory for level pointers.\n");
-             exit(EXIT_FAILURE);
-        }
+        // Apply op_0 to h0 to get h_1 (store in d_h_out[0])
+        apply_scan_op_kernel<<<dim3(blocksPerGrid_h), dim3(threadsPerBlock_h)>>>(d_a_composed_prev, d_b_composed_prev, d_h0, d_h_out, hidden_size);
+        CHECK_CUDA_ERROR(cudaGetLastError());
 
-        // Level 0 points to the original input a and b arrays
-        d_a_levels[0] = (float*)d_a; // Need const_cast or handle differently if d_a is strictly const
-        d_b_levels[0] = (float*)d_b; // Need const_cast
+        // Iteratively compute composed ops and apply
+        for (int t = 1; t < seq_length; ++t) {
+            const float* d_a_t = d_a + t * hidden_size;
+            const float* d_b_t = d_b + t * hidden_size;
+            float* d_h_out_t = d_h_out + t * hidden_size;
 
-        // Allocate device memory for intermediate levels (1 to num_levels)
-        for (int level = 1; level <= num_levels; level++) {
-            CHECK_CUDA_ERROR(cudaMalloc((void**)&d_a_levels[level], seq_hidden_size_bytes));
-            CHECK_CUDA_ERROR(cudaMalloc((void**)&d_b_levels[level], seq_hidden_size_bytes));
-            // Initialize? The reference code might rely on compose kernel writing to all necessary parts.
-            // It might be safer to initialize to identity (a=1, b=0) or copy previous level.
-            // Let's try copying previous level first, as compose only updates specific indices.
-             CHECK_CUDA_ERROR(cudaMemcpy(d_a_levels[level], d_a_levels[level-1], seq_hidden_size_bytes, cudaMemcpyDeviceToDevice));
-             CHECK_CUDA_ERROR(cudaMemcpy(d_b_levels[level], d_b_levels[level-1], seq_hidden_size_bytes, cudaMemcpyDeviceToDevice));
-        }
-
-        // --- Up-sweep phase: Compose operations level by level ---
-        for (int level = 0; level < num_levels; level++) {
-            int stride = 1 << level; // Distance between elements being combined (1, 2, 4, ...)
-            // The reference code seems to iterate differently, maybe not a full tree?
-            // Let's re-examine the reference 'min_gru_cuda.cu::min_gru_parallel_scan_cuda' logic carefully.
-
-            // --- Corrected Up-sweep (Simulating reference more closely) ---
-            // The reference code's loop structure seems complex and potentially incorrect or non-standard.
-            // A standard work-efficient parallel scan (like Blelloch) is usually preferred.
-            // Let's try implementing a simpler, less efficient, but possibly easier-to-understand scan first.
-            // This simpler version iteratively applies the composition.
-
-            // Alternative: Simpler (but less efficient) iterative scan composition on GPU
-            // This computes the prefix product/sum of the operations sequentially on the GPU.
-            // Allocate temporary buffers for the composed op at step t-1
-            float* d_a_composed_prev = NULL;
-            float* d_b_composed_prev = NULL;
-            float* d_a_composed_curr = NULL;
-            float* d_b_composed_curr = NULL;
-            CHECK_CUDA_ERROR(cudaMalloc((void**)&d_a_composed_prev, hidden_size_bytes));
-            CHECK_CUDA_ERROR(cudaMalloc((void**)&d_b_composed_prev, hidden_size_bytes));
-            CHECK_CUDA_ERROR(cudaMalloc((void**)&d_a_composed_curr, hidden_size_bytes));
-            CHECK_CUDA_ERROR(cudaMalloc((void**)&d_b_composed_curr, hidden_size_bytes));
-
-            // Initialize composed op for t=0 (it's just op_0)
-            CHECK_CUDA_ERROR(cudaMemcpy(d_a_composed_prev, d_a, hidden_size_bytes, cudaMemcpyDeviceToDevice));
-            CHECK_CUDA_ERROR(cudaMemcpy(d_b_composed_prev, d_b, hidden_size_bytes, cudaMemcpyDeviceToDevice));
-
-            // Apply op_0 to h0 to get h_1
-            apply_scan_op_kernel<<<gridDim, blockDim>>>(d_a_composed_prev, d_b_composed_prev, d_h0, d_h_out, hidden_size);
+            // Compose: curr = op_t ○ prev_composed
+            compose_scan_ops_kernel<<<dim3(blocksPerGrid_h), dim3(threadsPerBlock_h)>>>(
+                d_a_composed_prev, d_b_composed_prev,
+                d_a_t, d_b_t,
+                d_a_composed_curr, d_b_composed_curr,
+                hidden_size);
             CHECK_CUDA_ERROR(cudaGetLastError());
 
-            // Iteratively compute composed ops and apply them
-            for (int t = 1; t < seq_length; ++t) {
-                const float* d_a_t = d_a + t * hidden_size;
-                const float* d_b_t = d_b + t * hidden_size;
-                float* d_h_out_t = d_h_out + t * hidden_size;
+            // Apply: h_{t+1} = curr_composed ○ h0
+            apply_scan_op_kernel<<<dim3(blocksPerGrid_h), dim3(threadsPerBlock_h)>>>(
+                d_a_composed_curr, d_b_composed_curr,
+                d_h0,
+                d_h_out_t,
+                hidden_size);
+            CHECK_CUDA_ERROR(cudaGetLastError());
 
-                // Compose current op_t with the previously composed op (op_{t-1} ○ ... ○ op_0)
-                // result -> d_a_composed_curr, d_b_composed_curr
-                compose_scan_ops_kernel<<<gridDim, blockDim>>>(
-                    d_a_composed_prev, d_b_composed_prev, // op_{t-1} ○ ... ○ op_0
-                    d_a_t, d_b_t,                         // op_t
-                    d_a_composed_curr, d_b_composed_curr, // result: op_t ○ ... ○ op_0
-                    hidden_size);
-                CHECK_CUDA_ERROR(cudaGetLastError());
-
-                // Apply the fully composed operation (op_t ○ ... ○ op_0) to h0 to get h_{t+1}
-                apply_scan_op_kernel<<<gridDim, blockDim>>>(
-                    d_a_composed_curr, d_b_composed_curr, // op_t ○ ... ○ op_0
-                    d_h0,                                 // h0
-                    d_h_out_t,                            // result: h_{t+1}
-                    hidden_size);
-                CHECK_CUDA_ERROR(cudaGetLastError());
-
-                // Prepare for next iteration: current composed op becomes previous
-                 CHECK_CUDA_ERROR(cudaMemcpy(d_a_composed_prev, d_a_composed_curr, hidden_size_bytes, cudaMemcpyDeviceToDevice));
-                 CHECK_CUDA_ERROR(cudaMemcpy(d_b_composed_prev, d_b_composed_curr, hidden_size_bytes, cudaMemcpyDeviceToDevice));
-            }
-            CHECK_CUDA_ERROR(cudaDeviceSynchronize());
-
-            // Free temporary buffers for iterative scan
-            CHECK_CUDA_ERROR(cudaFree(d_a_composed_prev));
-            CHECK_CUDA_ERROR(cudaFree(d_b_composed_prev));
-            CHECK_CUDA_ERROR(cudaFree(d_a_composed_curr));
-            CHECK_CUDA_ERROR(cudaFree(d_b_composed_curr));
-
-        } // End of parallel scan implementation choice (sequential vs parallel)
-
-        // --- Cleanup (Common for both scan approaches) ---
-        // Free intermediate level memory if tree-based was used (commented out for now)
-        /*
-        if (seq_length > sequential_threshold) {
-             for (int level = 1; level <= num_levels; level++) {
-                 cudaFree(d_a_levels[level]);
-                 cudaFree(d_b_levels[level]);
-             }
-             free(d_a_levels);
-             free(d_b_levels);
+            // Update prev_composed = curr_composed
+             CHECK_CUDA_ERROR(cudaMemcpy(d_a_composed_prev, d_a_composed_curr, hidden_size_bytes, cudaMemcpyDeviceToDevice));
+             CHECK_CUDA_ERROR(cudaMemcpy(d_b_composed_prev, d_b_composed_curr, hidden_size_bytes, cudaMemcpyDeviceToDevice));
         }
-        */
-    } // End of `else` for parallel scan logic
+        CHECK_CUDA_ERROR(cudaDeviceSynchronize());
 
-    // Note: d_h_out is populated directly in both branches (sequential GPU / parallel scan GPU)
-    // No final copy back to host needed here, that's done in the calling function.
-}
+        CHECK_CUDA_ERROR(cudaFree(d_a_composed_prev));
+        CHECK_CUDA_ERROR(cudaFree(d_b_composed_prev));
+        CHECK_CUDA_ERROR(cudaFree(d_a_composed_curr));
+        CHECK_CUDA_ERROR(cudaFree(d_b_composed_curr));
+        // Note: The tree-based scan logic involving d_a_levels/d_b_levels was complex and potentially the source of errors,
+        // so it's replaced here with a simpler iterative approach for correctness.
+        // A more efficient tree-based scan (e.g., Blelloch) could be implemented later if needed.
+    }
+} // End of min_gru_parallel_scan_cuda
+
 
 // ============================================================================
 // Main CUDA Wrapper (Adapted from min_gru_cuda.cu)
@@ -471,6 +396,7 @@ void min_gru_process_sequence_cuda(const MinGRUCell* cell, const float* x, const
     // --- 4. Extract Scan Parameters (a_t, b_t) using Kernel ---
     int threadsPerBlock = 256; // Or tune this
     int blocksPerGrid_h = (cell->hidden_size + threadsPerBlock - 1) / threadsPerBlock;
+    // Construct dim3 directly for this kernel launch
     dim3 extractBlockDim(threadsPerBlock);
     dim3 extractGridDim(blocksPerGrid_h, seq_length); // GridDim.y corresponds to sequence length
 
