@@ -27,9 +27,9 @@ add_library(min_gru_scan_lib OBJECT min_gru_scan.cu)
 # Add the main executable target, linking the object library
 add_executable(min_gru_scan $<TARGET_OBJECTS:min_gru_scan_lib>)
 
-# Link libraries
+# Link libraries (using plain signature for consistency)
 # Using ${CUDA_LIBRARIES} as specified in .clinerules
-target_link_libraries(min_gru_scan PRIVATE ${CUDA_LIBRARIES} m)
+target_link_libraries(min_gru_scan ${CUDA_LIBRARIES} m)
 
 # Optional: Add include directories if needed (e.g., if utils were separate)
 # target_include_directories(min_gru_scan PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -41,8 +41,8 @@ if(TARGET GTest::gtest)
     # Add the test executable target, linking the object library and GTest
     cuda_add_executable(min_gru_scan_test min_gru_scan_test.cu $<TARGET_OBJECTS:min_gru_scan_lib>)
 
-    # Link libraries for the test executable
-    target_link_libraries(min_gru_scan_test PRIVATE ${CUDA_LIBRARIES} m GTest::gtest GTest::gtest_main)
+    # Link libraries for the test executable (using plain signature for consistency)
+    target_link_libraries(min_gru_scan_test ${CUDA_LIBRARIES} m GTest::gtest GTest::gtest_main)
 
     # Add test to CTest
     include(GoogleTest)
