@@ -12,7 +12,7 @@ set_property(TARGET bidirectional_lstm PROPERTY CXX_STANDARD 14)
 set_property(TARGET bidirectional_lstm PROPERTY CXX_STANDARD_REQUIRED YES)
 
 # Add unit test
-add_executable(bidirectional_lstm_test test_bidirectional_lstm.cu)
+add_executable(bidirectional_lstm_test test_bidirectional_lstm.cu bidirectional_lstm.cu) # Include implementation file for tests
 target_link_libraries(bidirectional_lstm_test PRIVATE ${CUDA_LIBRARIES} m gtest gtest_main pthread) # Link with gtest and pthread
 set_property(TARGET bidirectional_lstm_test PROPERTY CXX_STANDARD 14)
 set_property(TARGET bidirectional_lstm_test PROPERTY CXX_STANDARD_REQUIRED YES)
