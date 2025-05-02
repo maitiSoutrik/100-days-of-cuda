@@ -4,16 +4,21 @@ project(day053_lstm CUDA CXX)
 set(CMAKE_CUDA_ARCHITECTURES 53)
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3")
 
-add_executable(bidirectional_lstm main_lstm.cu bidirectional_lstm.cu) # Use separate files for main and implementation
+# Create a static library for the LSTM implementation
+add_library(lstm_lib STATIC bidirectional_lstm.cu)
+set_property(TARGET lstm_lib PROPERTY CXX_STANDARD 14)
+set_property(TARGET lstm_lib PROPERTY CXX_STANDARD_REQUIRED YES)
+# Note: No need to link CUDA_LIBRARIES to the static library itself
 
-target_link_libraries(bidirectional_lstm PRIVATE ${CUDA_LIBRARIES} m)
-
+# Executable for main demonstration
+add_executable(bidirectional_lstm main_lstm.cu)
+target_link_libraries(bidirectional_lstm PRIVATE lstm_lib ${CUDA_LIBRARIES} m) # Link against the library and CUDA runtime
 set_property(TARGET bidirectional_lstm PROPERTY CXX_STANDARD 14)
 set_property(TARGET bidirectional_lstm PROPERTY CXX_STANDARD_REQUIRED YES)
 
 # Add unit test
-add_executable(bidirectional_lstm_test test_bidirectional_lstm.cu bidirectional_lstm.cu) # Include implementation file for tests
-target_link_libraries(bidirectional_lstm_test PRIVATE ${CUDA_LIBRARIES} m gtest gtest_main pthread) # Link with gtest and pthread
+add_executable(bidirectional_lstm_test test_bidirectional_lstm.cu) # Test executable only needs its own source now
+target_link_libraries(bidirectional_lstm_test PRIVATE lstm_lib ${CUDA_LIBRARIES} m gtest gtest_main pthread) # Link against the library, CUDA runtime, and gtest
 set_property(TARGET bidirectional_lstm_test PROPERTY CXX_STANDARD 14)
 set_property(TARGET bidirectional_lstm_test PROPERTY CXX_STANDARD_REQUIRED YES)
 # Point include directories to gtest if needed, assuming gtest is found by find_package
