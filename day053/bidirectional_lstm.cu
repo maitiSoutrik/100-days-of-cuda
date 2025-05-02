@@ -1,13 +1,5 @@
-#include <cuda_runtime.h>
-#include <iostream>
-#include <vector>
-#include <cstdlib>
-#include <ctime>
-
-#define HIDDEN_SIZE 128
-#define INPUT_SIZE 128
-#define SEQ_LEN 50
-#define BATCH_SIZE 32
+#include "bidirectional_lstm.h"
+#include <ctime> // Include for time
 
 // Sigmoid activation function
 __device__ float sigmoid(float x) {
@@ -56,81 +48,6 @@ void bidirectional_lstm(float* input, float* h_forward, float* c_forward, float*
     // The output should store concatenated device pointers h_forward and h_backward, not host memory
 }
 
-int main() {
-    srand(time(NULL));
-    // Allocate host memory
-    std::vector<float> h_input(SEQ_LEN * BATCH_SIZE * INPUT_SIZE, 1.0f);
-    std::vector<float> h_output_host(2 * BATCH_SIZE * HIDDEN_SIZE, 0.0f); // Host buffer to receive final concatenated output
-    std::vector<float> h_W(4 * HIDDEN_SIZE * INPUT_SIZE);
-    std::vector<float> h_U(4 * HIDDEN_SIZE * HIDDEN_SIZE);
-    std::vector<float> h_b(4 * HIDDEN_SIZE);
-
-    for (auto& w : h_W) w = ((float) rand() / RAND_MAX) * 0.1f;
-    for (auto& u : h_U) u = ((float) rand() / RAND_MAX) * 0.1f;
-    for (auto& b : h_b) b = 0.0f;
-
-    // Allocate device memory
-    float *d_input, *d_h_forward, *d_c_forward, *d_h_backward, *d_c_backward, *d_W, *d_U, *d_b, *d_output;
-    cudaMalloc(&d_input, SEQ_LEN * BATCH_SIZE * INPUT_SIZE * sizeof(float));
-    cudaMalloc(&d_h_forward, BATCH_SIZE * HIDDEN_SIZE * sizeof(float));
-    cudaMalloc(&d_c_forward, BATCH_SIZE * HIDDEN_SIZE * sizeof(float));
-    cudaMalloc(&d_h_backward, BATCH_SIZE * HIDDEN_SIZE * sizeof(float));
-    cudaMalloc(&d_c_backward, BATCH_SIZE * HIDDEN_SIZE * sizeof(float));
-    cudaMalloc(&d_W, 4 * HIDDEN_SIZE * INPUT_SIZE * sizeof(float));
-    cudaMalloc(&d_U, 4 * HIDDEN_SIZE * HIDDEN_SIZE * sizeof(float));
-    cudaMalloc(&d_b, 4 * HIDDEN_SIZE * sizeof(float));
-    // d_output will hold the concatenated final hidden states (device pointers)
-    cudaMalloc(&d_output, 2 * BATCH_SIZE * HIDDEN_SIZE * sizeof(float));
-
-
-    // Initialize memory on device
-    cudaMemcpy(d_input, h_input.data(), SEQ_LEN * BATCH_SIZE * INPUT_SIZE * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_W, h_W.data(), 4 * HIDDEN_SIZE * INPUT_SIZE * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_U, h_U.data(), 4 * HIDDEN_SIZE * HIDDEN_SIZE * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_b, h_b.data(), 4 * HIDDEN_SIZE * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemset(d_h_forward, 0, BATCH_SIZE * HIDDEN_SIZE * sizeof(float));
-    cudaMemset(d_c_forward, 0, BATCH_SIZE * HIDDEN_SIZE * sizeof(float));
-    cudaMemset(d_h_backward, 0, BATCH_SIZE * HIDDEN_SIZE * sizeof(float));
-    cudaMemset(d_c_backward, 0, BATCH_SIZE * HIDDEN_SIZE * sizeof(float));
-
-    // Run bidirectional LSTM
-    // Pass d_output to store the concatenated results on the device
-    bidirectional_lstm(d_input, d_h_forward, d_c_forward, d_h_backward, d_c_backward, d_W, d_U, d_b, d_output);
-
-    // After running the kernels for all timesteps in bidirectional_lstm,
-    // copy the final forward and backward hidden states to the d_output buffer on the device.
-    // This should be done *after* the loop in bidirectional_lstm finishes, but before copying to host.
-    // Since the provided bidirectional_lstm function structure doesn't allow modifying d_output inside the loop,
-    // the concatenation logic should be added here or a different function structure used.
-    // For now, let's manually copy the final h_forward and h_backward to d_output here for simplicity.
-    cudaMemcpy(d_output, d_h_forward, BATCH_SIZE * HIDDEN_SIZE * sizeof(float), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(d_output + BATCH_SIZE * HIDDEN_SIZE, d_h_backward, BATCH_SIZE * HIDDEN_SIZE * sizeof(float), cudaMemcpyDeviceToDevice);
-    cudaDeviceSynchronize(); // Ensure device copies are complete
-
-    // Copy final concatenated result back to host
-    cudaMemcpy(h_output_host.data(), d_output, 2 * BATCH_SIZE * HIDDEN_SIZE * sizeof(float), cudaMemcpyDeviceToHost);
-
-    // Print output
-    std::cout << "Bidirectional LSTM Output (first 10 elements):\n";
-    for (int i = 0; i < std::min((int)h_output_host.size(), 10); i++) {
-        std::cout << h_output_host[i] << " ";
-    }
-    std::cout << "\n"; // Use newline instead of "..." for cleaner output
-
-    // Cleanup
-    cudaFree(d_input);
-    cudaFree(d_h_forward);
-    cudaFree(d_c_forward);
-    cudaFree(d_h_backward);
-    cudaFree(d_c_backward);
-    cudaFree(d_W);
-    cudaFree(d_U);
-    cudaFree(d_b);
-    cudaFree(d_output); // Free the d_output buffer
-    // No need to free h_input, h_output_host, h_W, h_U, h_b as they are std::vector and handle their memory
-
-    return 0;
-}
 
 // Simple error checking macro for CUDA calls
 #define CHECK_CUDA_ERROR(val) check((val), #val, __FILE__, __LINE__)

@@ -1,5 +1,9 @@
 #include "gtest/gtest.h"
-#include "bidirectional_lstm.cu" // Include the CUDA implementation
+#include "bidirectional_lstm.h" // Include the CUDA implementation header
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+#include <algorithm> // For std::min
 
 // Simple test case for CUDA memory allocation and deallocation
 TEST(BidirectionalLSTMTest, CudaMemoryAllocation) {
