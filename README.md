@@ -74,6 +74,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 50  | 2025-04-28 | Unit Testing CUDA Kernels with Google Test | [Link](./day050/) | :heavy_check_mark: |
 | 51  | 2025-04-29 | Exploring TensorRT (Simple ONNX Inference) | [Link](./day051/) |                    |
 | 52  | 2025-04-30 | Minimal GRU (minGRU) with Parallel Scan | [Link](./day052/) |                    |
+| 53  | 2025-05-01 | Bidirectional LSTM Implementation                     | [Link](./day053/) | :heavy_check_mark: |
 
 ## Rules
 
