@@ -4,7 +4,7 @@ project(day053_lstm CUDA CXX)
 set(CMAKE_CUDA_ARCHITECTURES 53)
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3")
 
-add_executable(bidirectional_lstm main_lstm.cu) # Use a separate file for the main executable
+add_executable(bidirectional_lstm main_lstm.cu bidirectional_lstm.cu) # Use separate files for main and implementation
 
 target_link_libraries(bidirectional_lstm PRIVATE ${CUDA_LIBRARIES} m)
 
