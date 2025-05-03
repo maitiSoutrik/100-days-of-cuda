@@ -56,7 +56,8 @@ __global__ void rgb_to_gray_float_kernel(uchar3* rgb, float* gray, int width, in
 
 int main(int argc, char *argv[]) {
     // --- Parameters ---
-    std::string input_filename = "../day014/lena_gray.png"; // Default input file
+    // Default input file now expected in the same directory as the executable
+    std::string input_filename = "lena_gray.png";
     std::string output_dir = "./output_interpolated";
     std::string output_filename_gpu = ""; // Determined later
     std::string output_filename_cpu = ""; // Determined later

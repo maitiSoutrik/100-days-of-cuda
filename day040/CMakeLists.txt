@@ -37,6 +37,22 @@ target_link_libraries(texture_interpolation
     ${OpenCV_LIBS}
 )
 
+# Copy the input image required by the executable to the build directory
+# Source path relative to the project root
+set(INPUT_IMAGE_SOURCE ${CMAKE_SOURCE_DIR}/day014/lena_gray.png)
+# Destination path in the build directory for this day
+set(INPUT_IMAGE_DEST ${CMAKE_CURRENT_BINARY_DIR}/lena_gray.png)
+
+add_custom_command(
+    TARGET texture_interpolation POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${INPUT_IMAGE_SOURCE}
+            ${INPUT_IMAGE_DEST}
+    COMMENT "Copying lena_gray.png to build directory for runtime access"
+    VERBATIM # Ensures command is executed exactly as specified
+)
+
 message(STATUS "Configured Day 40: Texture Memory Interpolation (CUDA + OpenCV)")
 message(STATUS "  - OpenCV include dirs: ${OpenCV_INCLUDE_DIRS}")
 message(STATUS "  - OpenCV libraries: ${OpenCV_LIBS}")
+message(STATUS "  - Input image will be copied to: ${INPUT_IMAGE_DEST}")
