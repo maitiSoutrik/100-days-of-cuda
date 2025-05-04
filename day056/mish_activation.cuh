@@ -7,9 +7,17 @@
 #include <cuda_runtime.h>
 #include <iostream> // For error checking output
 
-// Simple CUDA error checking macro/function declaration
+// Simple CUDA error checking macro/function definition (inline in header)
 #define CHECK_CUDA_ERROR(val) checkCuda((val), #val, __FILE__, __LINE__)
-void checkCuda(cudaError_t result, char const *const func, const char *const file, int const line);
+inline void checkCuda(cudaError_t result, char const *const func, const char *const file, int const line) {
+    if (result) {
+        std::cerr << "CUDA error = " << static_cast<unsigned int>(result) << " (" << cudaGetErrorString(result) << ") "
+                  << " at " << file << ":" << line << " '" << func << "' \\n";
+        // Make sure we call CUDA Device Reset before exiting
+        cudaDeviceReset();
+        exit(99);
+    }
+}
 
 // Mish activation function: f(x) = x * tanh(softplus(x))
 // softplus(x) = log(1 + exp(x))

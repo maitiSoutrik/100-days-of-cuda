@@ -41,8 +41,8 @@ target_include_directories(mish_benchmark PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 enable_testing()
 
 # Add the test executable
-# Include mish_activation.cu to get the definition of checkCuda, or move checkCuda to header/separate file
-add_executable(mish_benchmark_test mish_activation_test.cu mish_activation.cu)
+# checkCuda definition is now inline in the header, so no need to link mish_activation.cu
+add_executable(mish_benchmark_test mish_activation_test.cu) # Only include the test source
 
 # Link required libraries for the test executable
 target_link_libraries(mish_benchmark_test PRIVATE
