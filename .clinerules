@@ -13,11 +13,13 @@
 
 -   Each day's work resides in a dedicated directory named `dayXXX` (e.g., `day001`, `day023`).
 -   Each `dayXXX` directory MUST contain:
-    -   `CMakeLists.txt`: Specific build configuration for that day.
-    -   One or more `.cu` source files containing the CUDA implementation. Filenames should be descriptive (e.g., `vector_add.cu`, `fft_comparison.cu`).
+    -   `CMakeLists.txt`: Specific build configuration for the main executable and tests.
+    -   Header file(s) (`.h` or `.cuh`) defining functions/classes/kernels (e.g., `mish_activation.cuh`).
+    -   Source file(s) (`.cu`) implementing the core CUDA logic and potentially a main benchmarking executable (e.g., `mish_activation.cu`).
+    -   A dedicated test file (`*_test.cu`, e.g., `mish_activation_test.cu`) containing unit tests using Google Test.
     -   `README.md`: Detailed documentation for the day's work (see Documentation section below).
 -   The root directory contains:
-    -   Top-level `CMakeLists.txt` managing all subdirectories.
+    -   Top-level `CMakeLists.txt` managing all subdirectories and potentially fetching Google Test.
     -   Root `README.md` tracking overall progress.
     -   `.github/workflows/deploy-to-jetson.yml`: CI/CD pipeline for Jetson deployment.
 -   New days MUST follow this structure.
@@ -32,14 +34,19 @@
     -   MUST declare the project for the day (e.g., `project(dayXXX_concept CUDA CXX)`).
     -   MUST set the CUDA architecture explicitly for Jetson Nano: `set(CMAKE_CUDA_ARCHITECTURES 53)`.
     -   MUST set optimization flags, typically `-O3`: `set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3")`.
-    -   MUST define an executable target using `add_executable` or `cuda_add_executable`. The executable name should be concise and relevant (e.g., `vector_add`, `fft_comparison`).
+    -   MUST define at least one executable target for the main benchmark/application (e.g., `mish_benchmark`) using `add_executable` or `cuda_add_executable`.
+    -   MUST define a separate executable target for unit tests (e.g., `mish_benchmark_test`) using `add_executable` or `cuda_add_executable`.
     -   MUST set C++ standard (e.g., `CXX_STANDARD 14` or consistent with existing files).
-    -   MUST link necessary libraries:
-        -   Always link the CUDA runtime using `${CUDA_LIBRARIES}` (obtained from `find_package(CUDA REQUIRED)`). **Do not use `CUDA::cudart`** as it has shown inconsistency in this project setup.
+    -   MUST link necessary libraries for the main executable:
+        -   Always link the CUDA runtime using `${CUDA_LIBRARIES}` (obtained from `find_package(CUDA REQUIRED)`). **Do not use `CUDA::cudart`**.
         -   Link `m` for math functions if needed.
-        -   Link specific CUDA libraries when used, preferably using the variables provided by CMake's FindCUDA module (e.g., `${CUDA_CUFFT_LIBRARIES}`, `${CUDA_curand_LIBRARY}`) or modern targets like `CUDA::cublas` if confirmed to work reliably.
-        -   Link external libraries like OpenCV (`${OpenCV_LIBS}`) when used. Handle conditional linking if OpenCV is optional.
-    -   Include directories (`include_directories`) should be added if required (e.g., for OpenCV).
+        -   Link specific CUDA libraries (e.g., `${CUDA_CUFFT_LIBRARIES}`, `CUDA::cublas`) if used.
+        -   Link external libraries (e.g., `${OpenCV_LIBS}`) if used.
+    -   MUST link necessary libraries for the test executable:
+        -   Link `${CUDA_LIBRARIES}` and `m` as needed.
+        -   Link Google Test libraries (e.g., `GTest::gtest`, `GTest::gtest_main` or `${GOOGLETEST_LIBRARIES}`, `${GTEST_MAIN_LIBRARIES}` depending on how gtest is included).
+    -   MUST use `target_include_directories` to make headers visible within the day's directory and potentially link against Google Test headers.
+    -   MUST enable testing using `include(GoogleTest)` and `gtest_discover_tests` or `add_test` to register the test executable with CTest.
 
 ## 4. Coding Standards & Practices
 
@@ -76,12 +83,13 @@
 
 -   **Build Location:** Compilation MUST occur on the target platform (Jetson Nano), via the CI/CD pipeline, or a compatible environment configured for the target architecture (e.g., cross-compilation). **Local builds on the development machine (e.g., macOS) are NOT required or expected.**
 -   **Execution Target:** Code MUST run correctly on an NVIDIA Jetson Nano (Compute Capability 5.3).
--   **Verification:** The output should be clear and verifiable. If comparing GPU vs. CPU, include verification logic (e.g., comparing results, calculating MSE).
--   **CI/CD Integration:** The CI/CD workflow (`.github/workflows/deploy-to-jetson.yml`) builds and runs *all* day executables on the target. Ensure new code integrates smoothly and does not break the workflow. The workflow expects executables in `build/dayXXX/`.
+-   **Verification:** The main executable output should be clear and verifiable. If comparing GPU vs. CPU, include verification logic.
+-   **Unit Testing:** MUST include unit tests using Google Test in the `*_test.cu` file. Tests should cover core kernel logic and helper functions where applicable. Tests MUST pass.
+-   **CI/CD Integration:** The CI/CD workflow (`.github/workflows/deploy-to-jetson.yml`) builds and runs *all* day executables **and tests** on the target. Ensure new code integrates smoothly and does not break the workflow. The workflow expects executables in `build/dayXXX/` and runs `ctest`.
 
 ## 7. Dependencies
 
--   **Core:** CUDA Toolkit, CMake (>= 3.10) (on the build/target environment).
+-   **Core:** CUDA Toolkit, CMake (>= 3.10), Google Test (on the build/target environment). Google Test might be fetched via CMake or assumed pre-installed.
 -   **CUDA Libraries:** Specify required libraries like cuRAND, cuBLAS, cuFFT in the day's `README.md` and link them in `CMakeLists.txt`.
 -   **External Libraries:** Specify external dependencies like OpenCV in the day's `README.md` and configure them in `CMakeLists.txt` (ensure they are available on the build/target environment).
 
