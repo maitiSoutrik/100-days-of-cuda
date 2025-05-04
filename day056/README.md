@@ -92,28 +92,49 @@ The implementation is split into a header, a source file for the main benchmark,
 
 ## Execution Results
 
-*(Note: The following is example output. Actual times will vary based on the specific hardware, especially the Jetson Nano.)*
+Output from running the benchmark (`./day056/mish_benchmark`) on the Jetson Nano:
 
 ```text
-Processing 16777216 elements (64.00 MB)
+Processing 16777216 elements (64 MB)
 Host input data initialized.
 Device memory allocated.
 Input data copied to device.
 
 --- CPU Execution ---
-CPU execution time: 1234.567 ms
+CPU execution time: 3161.878 ms
 
 --- GPU Execution ---
-GPU execution time: 15.890 ms
+GPU execution time: 34.315 ms
 GPU results copied back to host.
 
 --- Verification ---
 Verification successful: CPU and GPU results match.
 
 --- Performance ---
-GPU Speedup over CPU: 77.70x
+GPU Speedup over CPU: 92.14x
 
 Cleanup complete.
+```
+
+Output from running the tests (`ctest --output-on-failure` or `./day056/mish_benchmark_test`) on the Jetson Nano:
+
+```text
+Running main() from /home/drboom/git_repos/100-days-of-cuda/build/_deps/googletest-src/googletest/src/gtest_main.cc
+[==========] Running 2 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 1 test from MishActivationTest
+[ RUN      ] MishActivationTest.BasicValues
+[       OK ] MishActivationTest.BasicValues (0 ms)
+[----------] 1 test from MishActivationTest (0 ms total)
+
+[----------] 1 test from MishGpuTest
+[ RUN      ] MishGpuTest.KernelExecution
+[       OK ] MishGpuTest.KernelExecution (98 ms)
+[----------] 1 test from MishGpuTest (99 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 2 test suites ran. (99 ms total)
+[  PASSED  ] 2 tests.
 ```
 
 ## Learnings and Observations
