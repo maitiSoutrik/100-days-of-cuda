@@ -19,8 +19,8 @@ inline void checkCuda(cudaError_t result, char const *const func, const char *co
 }
 
 #define TILE_DIM 16 // Threads per block dimension
-#define FP8_MIN_VAL -448.0f // Example range for FP8 E5M2
-#define FP8_MAX_VAL  448.0f
+#define FP8_MIN_VAL -64.0f // Adjusted range for simulation based on input data [-50, 50]
+#define FP8_MAX_VAL  64.0f // Adjusted range for simulation based on input data [-50, 50]
 
 // --- FP8 Simulation ---
 __device__ __forceinline__ uint8_t quantize_fp8_e5m2_sim(float x) {

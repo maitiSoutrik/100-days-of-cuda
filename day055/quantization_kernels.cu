@@ -22,12 +22,13 @@ __global__ void matmul_fp16_kernel(const __half *A, const __half *B, __half *C, 
     int col = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (row < N && col < N) {
-        __half sum_h = __float2half(0.0f);
+        float sum_f = 0.0f; // Use FP32 for accumulation
         for (int k = 0; k < N; k++) {
-            // Use __hmul for multiplication and __hadd for addition
-            sum_h = __hadd(sum_h, __hmul(A[row * N + k], B[k * N + col]));
+            // Multiply in FP16, but add to FP32 accumulator
+            sum_f += __half2float(__hmul(A[row * N + k], B[k * N + col]));
         }
-        C[row * N + col] = sum_h;
+        // Convert final result back to FP16 for storage
+        C[row * N + col] = __float2half(sum_f);
     }
 }
 
