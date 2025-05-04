@@ -10,7 +10,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(CUDA REQUIRED)
 
 # Find Google Test package
-# Assumes GTest is installed on the system or fetched by a parent CMakeLists.txt
 find_package(GTest REQUIRED)
 
 # Set CUDA architecture for Jetson Nano (sm_53)
@@ -20,49 +19,43 @@ set(CMAKE_CUDA_ARCHITECTURES 53)
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
-# Include the current directory for the header file
-# Note: Using target_include_directories is generally preferred over include_directories
-# Making it INTERFACE allows propagation if needed, PRIVATE limits it. Using PRIVATE here.
-
-# --- Main Benchmark Executable ---
-add_executable(mish_benchmark mish_activation.cu)
-
-# Link required libraries for the benchmark
-target_link_libraries(mish_benchmark PRIVATE
+# --- Mish Activation Library ---
+# Contains core function definitions (CPU/GPU)
+add_library(mish_activation_lib STATIC mish_activation_lib.cu)
+# Ensure library includes headers from current dir
+target_include_directories(mish_activation_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+# Link common libraries needed by the library code itself
+target_link_libraries(mish_activation_lib PRIVATE
     ${CUDA_LIBRARIES}
     m
 )
-# Ensure benchmark includes headers from current dir
+
+# --- Main Benchmark Executable ---
+add_executable(mish_benchmark mish_activation.cu) # Contains main()
+# Link benchmark against the library
+target_link_libraries(mish_benchmark PRIVATE mish_activation_lib)
+# Ensure benchmark includes headers from current dir (redundant if lib propagates via PUBLIC, but safe)
 target_include_directories(mish_benchmark PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 
 # --- Test Executable ---
-# Enable testing for this directory (already enabled at root, but doesn't hurt)
 enable_testing()
-
-# Add the test executable
-# checkCuda definition is now inline in the header, so no need to link mish_activation.cu
-add_executable(mish_benchmark_test mish_activation_test.cu) # Only include the test source
-
-# Link required libraries for the test executable
+add_executable(mish_benchmark_test mish_activation_test.cu) # Contains test main() via GTest::gtest_main
+# Link test against the library and GTest
 target_link_libraries(mish_benchmark_test PRIVATE
-    ${CUDA_LIBRARIES}
-    m
+    mish_activation_lib # Link our library
     GTest::gtest
-    GTest::gtest_main # Links the main function for gtest
+    GTest::gtest_main
 )
-# Ensure test includes headers from current dir and GTest
-target_include_directories(mish_benchmark_test PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    # ${GTEST_INCLUDE_DIRS} # Often not needed when using GTest::gtest target
-)
+# Ensure test includes headers from current dir (redundant if lib propagates via PUBLIC, but safe)
+target_include_directories(mish_benchmark_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Discover and add tests to CTest
 include(GoogleTest)
 gtest_discover_tests(mish_benchmark_test)
 
 # Optional: Print build info
-message(STATUS "Configuring Day 56: Mish Activation Benchmark & Tests")
+message(STATUS "Configuring Day 56: Mish Activation Library, Benchmark & Tests")
 message(STATUS "Target architecture: ${CMAKE_CUDA_ARCHITECTURES}")
 message(STATUS "CUDA Flags: ${CMAKE_CUDA_FLAGS}")
 message(STATUS "Found GTest: ${GTEST_FOUND}")
