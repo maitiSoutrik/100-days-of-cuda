@@ -8,17 +8,6 @@
 #include <random>
 #include <iomanip> // For std::setprecision
 
-// Implementation of CUDA error checking function
-void checkCuda(cudaError_t result, char const *const func, const char *const file, int const line) {
-    if (result) {
-        std::cerr << "CUDA error = " << static_cast<unsigned int>(result) << " (" << cudaGetErrorString(result) << ") "
-                  << " at " << file << ":" << line << " '" << func << "' \n";
-        // Make sure we call CUDA Device Reset before exiting
-        cudaDeviceReset();
-        exit(99);
-    }
-}
-
 // CPU implementation of Mish activation (definition)
 void mish_cpu(const std::vector<float>& input, std::vector<float>& output) {
     if (input.size() != output.size()) {
