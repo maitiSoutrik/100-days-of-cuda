@@ -7,23 +7,25 @@
 // Implementation of the Conjugate Gradient Method using cuBLAS
 int conjugateGradientMethodCuBLAS(cublasHandle_t handle, int n, const double *d_A, const double *d_b, double *d_x,
                                   int max_iters, double tolerance) {
-    double *d_r, *d_p, *d_Ap; // Residual, direction, A*p vectors on device
+    double *d_r, *d_p, *d_Ap, *d_Ax; // Residual, direction, A*p, A*x vectors on device
     CHECK_CUDA_ERROR(cudaMalloc(&d_r, n * sizeof(double)));
     CHECK_CUDA_ERROR(cudaMalloc(&d_p, n * sizeof(double)));
     CHECK_CUDA_ERROR(cudaMalloc(&d_Ap, n * sizeof(double)));
+    CHECK_CUDA_ERROR(cudaMalloc(&d_Ax, n * sizeof(double))); // Allocate for initial A*x
 
     double alpha, beta, r_dot_r, r_dot_r_new, p_dot_Ap;
     const double one = 1.0;
     const double zero = 0.0;
-    double neg_alpha, neg_beta_alpha; // For cuBLAS calls
+    const double minus_one = -1.0; // Constant for alpha = -1.0
+    double neg_alpha; // For cuBLAS calls
 
     // Initial calculation: r = b - A*x
-    // 1. Calculate A*x
-    CHECK_CUBLAS_ERROR(cublasDgemv(handle, CUBLAS_OP_N, n, n, &one, d_A, n, d_x, 1, &zero, d_r, 1));
-    // 2. Calculate r = b - A*x (using daxpy: r = -1.0*r + b)
-    const double minus_one = -1.0;
-    CHECK_CUBLAS_ERROR(cublasDaxpy(handle, n, &minus_one, d_r, 1, d_b, 1)); // d_b now holds b
-    CHECK_CUDA_ERROR(cudaMemcpy(d_r, d_b, n * sizeof(double), cudaMemcpyDeviceToDevice)); // Copy b into r (r = b - Ax)
+    // 1. Calculate d_Ax = A * d_x (initial guess)
+    CHECK_CUBLAS_ERROR(cublasDgemv(handle, CUBLAS_OP_N, n, n, &one, d_A, n, d_x, 1, &zero, d_Ax, 1));
+    // 2. Copy b to r: d_r = d_b
+    CHECK_CUDA_ERROR(cudaMemcpy(d_r, d_b, n * sizeof(double), cudaMemcpyDeviceToDevice));
+    // 3. Calculate r = r - Ax (r = 1*r + (-1)*Ax)
+    CHECK_CUBLAS_ERROR(cublasDaxpy(handle, n, &minus_one, d_Ax, 1, d_r, 1));
 
     // Initial p = r
     CHECK_CUDA_ERROR(cudaMemcpy(d_p, d_r, n * sizeof(double), cudaMemcpyDeviceToDevice));
@@ -89,6 +91,7 @@ int conjugateGradientMethodCuBLAS(cublasHandle_t handle, int n, const double *d_
     CHECK_CUDA_ERROR(cudaFree(d_r));
     CHECK_CUDA_ERROR(cudaFree(d_p));
     CHECK_CUDA_ERROR(cudaFree(d_Ap));
+    CHECK_CUDA_ERROR(cudaFree(d_Ax)); // Free the temporary d_Ax
 
     if (k == max_iters) {
         fprintf(stderr, "Warning: Conjugate Gradient Method did not converge within %d iterations.\n", max_iters);
