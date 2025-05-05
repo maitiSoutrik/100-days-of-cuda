@@ -78,6 +78,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 54  | 2025-05-02 | AdaHessian Optimizer Kernel                       | [Link](./day054/) | :heavy_check_mark: |
 | 55  | 2025-05-03 | Quantization Comparison (FP32/FP16/SimFP8)       | [Link](./day055/) |                    |
 | 56  | 2025-05-04 | Mish Activation Function Benchmark              | [Link](./day056/) | :heavy_check_mark: |
+| 57  | 2025-05-05 | Conjugate Gradient Method (CGM) using cuBLAS    | [Link](./day057/) |                    |
 
 ## Rules
 
