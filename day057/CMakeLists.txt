@@ -16,23 +16,32 @@ find_package(CUDA REQUIRED)
 # Note: find_package(CUDA) typically finds cuBLAS as well.
 # We link against ${CUDA_LIBRARIES} and ${CUDA_CUBLAS_LIBRARIES}
 
-# --- Library (if we want to separate logic, optional for now) ---
-# add_library(day057_cgm_cublas_lib cgm_cublas.cu cgm_cublas.cuh)
-# target_link_libraries(day057_cgm_cublas_lib PUBLIC ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES})
+# --- Shared Library ---
+# Compile the core CGM logic into a static library
+add_library(cgm_cublas_lib STATIC cgm_cublas.cu cgm_cublas.cuh)
+# Link the library against required CUDA components
+target_link_libraries(cgm_cublas_lib PRIVATE ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES} m)
+# Ensure headers from this directory are available
+target_include_directories(cgm_cublas_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
 
 # --- Main Executable ---
-add_executable(cgm_benchmark cgm_cublas.cu cgm_cublas.cuh)
-target_link_libraries(cgm_benchmark PRIVATE ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES} m)
-# If using the library approach:
-# target_link_libraries(cgm_benchmark PRIVATE day057_cgm_cublas_lib)
+# The benchmark executable now only needs its own main() logic,
+# but since main() is currently in cgm_cublas.cu, we still list it here.
+# A better approach might be to move main() to a separate file (e.g., benchmark_main.cu)
+# For now, we keep it simple:
+add_executable(cgm_benchmark cgm_cublas.cu) # main() is in cgm_cublas.cu
+# Link the benchmark against the library
+target_link_libraries(cgm_benchmark PRIVATE cgm_cublas_lib)
+
 
 # --- Testing ---
 find_package(GTest REQUIRED) # Assumes GoogleTest is findable on the build system
 
 # Test executable only includes the test source file
 add_executable(cgm_test cgm_cublas_test.cu)
-# Link against GTest and the benchmark target to get the implementation code
-target_link_libraries(cgm_test PRIVATE GTest::gtest GTest::gmock GTest::gtest_main cgm_benchmark)
+# Link the test against the library and GTest
+target_link_libraries(cgm_test PRIVATE cgm_cublas_lib GTest::gtest GTest::gmock GTest::gtest_main)
 
 include(GoogleTest)
 gtest_discover_tests(cgm_test)
