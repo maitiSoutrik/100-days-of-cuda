@@ -15,7 +15,8 @@
 -   Each `dayXXX` directory MUST contain:
     -   `CMakeLists.txt`: Specific build configuration for the main executable and tests.
     -   Header file(s) (`.h` or `.cuh`) defining functions/classes/kernels (e.g., `mish_activation.cuh`).
-    -   Source file(s) (`.cu`) implementing the core CUDA logic and potentially a main benchmarking executable (e.g., `mish_activation.cu`).
+    -   Source file(s) (`.cu`) implementing the core CUDA logic (e.g., `mish_activation.cu`). **This file MUST NOT contain the `main` function if a separate benchmark executable is also created.**
+    -   If a benchmark/demonstration executable is needed alongside reusable code, a separate source file containing the `main` function (e.g., `benchmark_main.cu`, `mish_main.cu`) MUST be created.
     -   A dedicated test file (`*_test.cu`, e.g., `mish_activation_test.cu`) containing unit tests using Google Test.
     -   `README.md`: Detailed documentation for the day's work (see Documentation section below).
 -   The root directory contains:
@@ -34,18 +35,17 @@
     -   MUST declare the project for the day (e.g., `project(dayXXX_concept CUDA CXX)`).
     -   MUST set the CUDA architecture explicitly for Jetson Nano: `set(CMAKE_CUDA_ARCHITECTURES 53)`.
     -   MUST set optimization flags, typically `-O3`: `set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3")`.
-    -   MUST define at least one executable target for the main benchmark/application (e.g., `mish_benchmark`) using `add_executable` or `cuda_add_executable`.
-    -   MUST define a separate executable target for unit tests (e.g., `mish_benchmark_test`) using `add_executable` or `cuda_add_executable`.
     -   MUST set C++ standard (e.g., `CXX_STANDARD 14` or consistent with existing files).
-    -   MUST link necessary libraries for the main executable:
-        -   Always link the CUDA runtime using `${CUDA_LIBRARIES}` (obtained from `find_package(CUDA REQUIRED)`). **Do not use `CUDA::cudart`**.
-        -   Link `m` for math functions if needed.
-        -   Link specific CUDA libraries (e.g., `${CUDA_CUFFT_LIBRARIES}`, `CUDA::cublas`) if used.
-        -   Link external libraries (e.g., `${OpenCV_LIBS}`) if used.
-    -   MUST link necessary libraries for the test executable:
-        -   Link `${CUDA_LIBRARIES}` and `m` as needed.
-        -   Link Google Test libraries (e.g., `GTest::gtest`, `GTest::gtest_main` or `${GOOGLETEST_LIBRARIES}`, `${GTEST_MAIN_LIBRARIES}` depending on how gtest is included).
-    -   MUST use `target_include_directories` to make headers visible within the day's directory and potentially link against Google Test headers.
+    -   **Library Pattern (Recommended when creating tests and/or benchmarks):**
+        -   Define a static library target (e.g., `add_library(my_lib STATIC core_logic.cu core_logic.cuh)`). This library contains the core, reusable CUDA implementation (kernels, device functions) and **MUST NOT** contain a `main` function.
+        -   Link this library against necessary CUDA components (`target_link_libraries(my_lib PRIVATE ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES} m)` etc.).
+        -   Make headers available (`target_include_directories(my_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})`).
+    -   **Main Benchmark/Application Executable:**
+        -   Define the executable target using `add_executable` (e.g., `add_executable(my_benchmark main.cu)`). The source file (`main.cu`) contains *only* the `main` function and related setup/teardown/printing code.
+        -   Link the executable against the static library (`target_link_libraries(my_benchmark PRIVATE my_lib)`).
+    -   **Test Executable:**
+        -   Define the test executable target using `add_executable` (e.g., `add_executable(my_test test_file.cu)`). The source file (`test_file.cu`) contains only the Google Test code.
+        -   Link the test executable against the static library and Google Test (`target_link_libraries(my_test PRIVATE my_lib GTest::gtest GTest::gmock GTest::gtest_main)`).
     -   MUST enable testing using `include(GoogleTest)` and `gtest_discover_tests` or `add_test` to register the test executable with CTest.
 
 ## 4. Coding Standards & Practices
