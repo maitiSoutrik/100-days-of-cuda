@@ -17,7 +17,7 @@ find_package(CUDA REQUIRED)
 # We link against ${CUDA_LIBRARIES} and ${CUDA_CUBLAS_LIBRARIES}
 
 # --- Shared Library ---
-# Compile the core CGM logic into a static library
+# Compile the core CGM logic (without main) into a static library
 add_library(cgm_cublas_lib STATIC cgm_cublas.cu cgm_cublas.cuh)
 # Link the library against required CUDA components
 target_link_libraries(cgm_cublas_lib PRIVATE ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES} m)
@@ -26,11 +26,8 @@ target_include_directories(cgm_cublas_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 
 # --- Main Executable ---
-# The benchmark executable now only needs its own main() logic,
-# but since main() is currently in cgm_cublas.cu, we still list it here.
-# A better approach might be to move main() to a separate file (e.g., benchmark_main.cu)
-# For now, we keep it simple:
-add_executable(cgm_benchmark cgm_cublas.cu) # main() is in cgm_cublas.cu
+# Compile the benchmark main file
+add_executable(cgm_benchmark benchmark_main.cu)
 # Link the benchmark against the library
 target_link_libraries(cgm_benchmark PRIVATE cgm_cublas_lib)
 
