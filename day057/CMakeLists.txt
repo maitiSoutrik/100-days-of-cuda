@@ -29,10 +29,10 @@ target_link_libraries(cgm_benchmark PRIVATE ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBR
 # --- Testing ---
 find_package(GTest REQUIRED) # Assumes GoogleTest is findable on the build system
 
-add_executable(cgm_test cgm_cublas_test.cu cgm_cublas.cu cgm_cublas.cuh) # Include .cu for implementation details needed by test
-target_link_libraries(cgm_test PRIVATE GTest::gtest GTest::gmock GTest::gtest_main ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES} m)
-# If using the library approach:
-# target_link_libraries(cgm_test PRIVATE day057_cgm_cublas_lib GTest::gtest GTest::gmock GTest::gtest_main)
+# Test executable only includes the test source file
+add_executable(cgm_test cgm_cublas_test.cu)
+# Link against GTest and the benchmark target to get the implementation code
+target_link_libraries(cgm_test PRIVATE GTest::gtest GTest::gmock GTest::gtest_main cgm_benchmark)
 
 include(GoogleTest)
 gtest_discover_tests(cgm_test)
