@@ -16,12 +16,6 @@ find_package(CUDA REQUIRED)
 # Note: find_package(CUDA) typically finds cuBLAS as well.
 # We link against ${CUDA_LIBRARIES} and ${CUDA_CUBLAS_LIBRARIES}
 
-# Include directories
-target_include_directories(day057_cgm_cublas_lib INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<INSTALL_INTERFACE:include>
-)
-
 # --- Library (if we want to separate logic, optional for now) ---
 # add_library(day057_cgm_cublas_lib cgm_cublas.cu cgm_cublas.cuh)
 # target_link_libraries(day057_cgm_cublas_lib PUBLIC ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES})
