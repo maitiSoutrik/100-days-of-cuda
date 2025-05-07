@@ -27,7 +27,7 @@ add_library(ray_tracer_lib STATIC
 )
 target_include_directories(ray_tracer_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # Link CUDA math library (for sqrtf, fmaxf etc.)
-target_link_libraries(ray_tracer_lib PRIVATE CUDA::cudart_static m) # Using modern CUDA:: targets if available, or ${CUDA_LIBRARIES}
+target_link_libraries(ray_tracer_lib PRIVATE ${CUDA_LIBRARIES} m) # Using ${CUDA_LIBRARIES} for broader compatibility
 
 # --- Main executable ---
 add_executable(ray_tracer_main main.cu)
