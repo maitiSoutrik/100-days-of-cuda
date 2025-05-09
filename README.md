@@ -81,6 +81,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 57  | 2025-05-05 | Conjugate Gradient Method (CGM) using cuBLAS    | [Link](./day057/) |                    |
 | 58  | 2025-05-06 | Bitonic Sort with Shared Memory Optimization    | [Link](./day058/) |                    |
 | 59  | 2025-05-07 | Basic Ray Tracing with CUDA                     | [Link](./day059/) |                    |
+| 60  | 2025-05-08 | Muon Optimization - Newton-Schulz Iteration     | [Link](./day060/) |                    |
 
 ## Rules
 
