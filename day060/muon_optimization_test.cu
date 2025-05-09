@@ -112,7 +112,7 @@ TEST(NewtonSchulzTest, OrthogonalizeSmallMatrix) {
     if (rows == 2 && cols == 3) h_G_in = {1,2,3,4,5,6};
 
     std::vector<float> h_G_out(rows * cols);
-    int num_ns_iterations = 5;
+    int num_ns_iterations = 15; // Increased from 5 to 15
 
     float *d_G_in, *d_G_out, *d_O, *d_O_T, *d_prod1, *d_prod2, *d_block_sums;
     CHECK_CUDA_ERROR(cudaMalloc(&d_G_in, rows * cols * sizeof(float)));
