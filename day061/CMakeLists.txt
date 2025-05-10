@@ -25,7 +25,7 @@ add_library(fisher_matrix_lib STATIC
     fisher_matrix.cuh
 )
 target_compile_features(fisher_matrix_lib PUBLIC cxx_std_14 cuda_std_14)
-target_link_libraries(fisher_matrix_lib PRIVATE CUDA::cudart) # Add other CUDA libs like cublas, curand if needed
+target_link_libraries(fisher_matrix_lib PRIVATE ${CUDA_LIBRARIES}) # Add other CUDA libs like cublas, curand if needed
 target_include_directories(fisher_matrix_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Main executable
