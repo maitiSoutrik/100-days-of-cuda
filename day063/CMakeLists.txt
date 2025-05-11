@@ -18,7 +18,6 @@ include(GoogleTest)
 # Core MCL Localization Library
 add_library(mcl_localization_lib STATIC
     mcl_localization.cu
-    mcl_localization.cuh
 )
 target_include_directories(mcl_localization_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(mcl_localization_lib PRIVATE ${CUDA_LIBRARIES} m) # m for math library if needed
