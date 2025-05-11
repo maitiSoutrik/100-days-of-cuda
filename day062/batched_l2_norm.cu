@@ -53,6 +53,13 @@ void compute_batched_l2_norm_gpu(const float* h_vectors,
                                  float* h_norms,
                                  int num_batches,
                                  int vector_dim) {
+    if (num_batches == 0) {
+        // No work to do, h_norms should remain empty or as is.
+        // The test expects h_gpu_norms to be size 0 if num_batches is 0.
+        // The caller should ensure h_norms is appropriately sized or handled.
+        return;
+    }
+
     size_t vector_data_size = num_batches * vector_dim * sizeof(float);
     size_t norm_data_size = num_batches * sizeof(float);
 
