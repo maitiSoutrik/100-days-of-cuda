@@ -5,7 +5,6 @@ set(CMAKE_CUDA_ARCHITECTURES 53)
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3") # Remove explicit -std flags here
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")   # Add CXX_FLAGS for consistency
 
-set(CMAKE_CUDA_EXTENSIONS OFF) # Disable NVCC language extensions
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CUDA_STANDARD 14) # Rely on this for nvcc's host C++ standard
@@ -23,6 +22,7 @@ include(GoogleTest)
 # Core MCL Localization Library
 add_library(mcl_localization_lib STATIC
     mcl_localization.cu
+    mcl_localization.cuh # Add header back as a source, like in day060
 )
 target_include_directories(mcl_localization_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(mcl_localization_lib PRIVATE ${CUDA_LIBRARIES} m) # m for math library if needed
