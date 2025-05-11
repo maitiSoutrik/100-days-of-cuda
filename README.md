@@ -83,6 +83,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 59  | 2025-05-07 | Basic Ray Tracing with CUDA                     | [Link](./day059/) |                    |
 | 60  | 2025-05-08 | Muon Optimization - Newton-Schulz Iteration     | [Link](./day060/) |                    |
 | 61  | 2025-05-09 | Fisher Information Matrix                       | [Link](./day061/) |                    |
+| 62  | 2025-05-10 | Batched Vector L2 Norm (Shared Memory Reduction) | [Link](./day062/) |                    |
 
 ## Rules
 
