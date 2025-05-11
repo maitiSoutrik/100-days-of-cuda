@@ -38,7 +38,7 @@
     -   MUST set C++ standard (e.g., `CXX_STANDARD 14` or consistent with existing files).
     -   **Library Pattern (Recommended when creating tests and/or benchmarks):**
         -   Define a static library target (e.g., `add_library(my_lib STATIC core_logic.cu core_logic.cuh)`). This library contains the core, reusable CUDA implementation (kernels, device functions) and **MUST NOT** contain a `main` function.
-        -   Link this library against necessary CUDA components (`target_link_libraries(my_lib PRIVATE ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES} m)` etc.).
+        -   Link this library against necessary CUDA components. For the CUDA runtime library, use `${CUDA_LIBRARIES}` (e.g., `target_link_libraries(my_lib PRIVATE ${CUDA_LIBRARIES})`). For other specific CUDA libraries like cuBLAS, use their respective variables (e.g., `${CUDA_CUBLAS_LIBRARIES}`). Avoid using modern CMake imported targets like `CUDA::cudart` if it causes inconsistencies; `${CUDA_LIBRARIES}` is generally more robust in this project's context. Example: `target_link_libraries(my_lib PRIVATE ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES} m)`.
         -   Make headers available (`target_include_directories(my_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})`).
     -   **Main Benchmark/Application Executable:**
         -   Define the executable target using `add_executable` (e.g., `add_executable(my_benchmark main.cu)`). The source file (`main.cu`) contains *only* the `main` function and related setup/teardown/printing code.
