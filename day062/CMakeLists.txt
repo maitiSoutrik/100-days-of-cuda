@@ -12,7 +12,7 @@ add_library(batched_l2_norm_lib STATIC
     batched_l2_norm.cuh
 )
 target_include_directories(batched_l2_norm_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(batched_l2_norm_lib PRIVATE CUDA::cudart)
+target_link_libraries(batched_l2_norm_lib PRIVATE ${CUDA_LIBRARIES})
 
 # Define the main executable
 add_executable(batched_l2_norm_main main.cu)
