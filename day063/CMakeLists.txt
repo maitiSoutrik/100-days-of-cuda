@@ -1,10 +1,11 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.18) # Match day050
 project(day063_mcl_localization CUDA CXX) # Match day050 language order
 
 set(CMAKE_CUDA_ARCHITECTURES 53)
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3") # Remove explicit -std flags here
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")   # Add CXX_FLAGS for consistency
 
+set(CMAKE_CUDA_EXTENSIONS OFF) # Disable NVCC language extensions
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CUDA_STANDARD 14) # Rely on this for nvcc's host C++ standard
