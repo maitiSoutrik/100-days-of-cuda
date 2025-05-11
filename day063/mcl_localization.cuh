@@ -33,8 +33,9 @@ struct TransitionMatrix {
     TransitionMatrix(int n_states);
     ~TransitionMatrix();
 
-    void copy_to_device(const std::vector<float>& host_matrix);
-    void copy_to_host(std.vector<float>& host_matrix);
+    // Use raw pointers for the interface to potentially avoid nvcc issues with std::vector in headers
+    void copy_to_device(const float* host_matrix_data);
+    void copy_to_host(float* host_matrix_data);
     void print_matrix(int max_dim = 10); // Print a portion of the matrix for debugging
 };
 

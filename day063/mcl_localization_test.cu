@@ -27,9 +27,9 @@ TEST_F(MCLTest, MatrixInitialization) {
     ASSERT_NE(matrix->data, nullptr);
     ASSERT_EQ(matrix->num_states, test_num_states);
 
-    std::vector<float> host_matrix;
-    matrix->copy_to_host(host_matrix);
-    ASSERT_EQ(host_matrix.size(), static_cast<size_t>(test_num_states * test_num_states));
+    std::vector<float> host_matrix(test_num_states * test_num_states);
+    matrix->copy_to_host(host_matrix.data()); // Pass raw pointer
+    // ASSERT_EQ(host_matrix.size(), static_cast<size_t>(test_num_states * test_num_states)); // Size is guaranteed by vector construction
 
     // Check if columns are somewhat normalized (sum to approx 1.0)
     // This is a basic check for initialize_synthetic_grid_world's normalization
@@ -44,16 +44,16 @@ TEST_F(MCLTest, MatrixInitialization) {
 
 // Test a single MCL iteration (Expansion + Inflation)
 TEST_F(MCLTest, SingleMCLIteration) {
-    std::vector<float> matrix_before_iter;
-    matrix->copy_to_host(matrix_before_iter);
+    std::vector<float> matrix_before_iter(test_num_states * test_num_states);
+    matrix->copy_to_host(matrix_before_iter.data());
 
     float inflation_factor = 2.0f;
     mcl_iteration_cuda(*matrix, inflation_factor);
 
-    std::vector<float> matrix_after_iter;
-    matrix->copy_to_host(matrix_after_iter);
+    std::vector<float> matrix_after_iter(test_num_states * test_num_states);
+    matrix->copy_to_host(matrix_after_iter.data());
 
-    ASSERT_EQ(matrix_after_iter.size(), matrix_before_iter.size());
+    // ASSERT_EQ(matrix_after_iter.size(), matrix_before_iter.size()); // Size is guaranteed
 
     // Check that columns are still normalized after iteration
     for (int j = 0; j < test_num_states; ++j) {

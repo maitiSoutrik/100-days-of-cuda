@@ -21,29 +21,32 @@ TransitionMatrix::~TransitionMatrix() {
     }
 }
 
-void TransitionMatrix::copy_to_device(const std::vector<float>& host_matrix) {
-    if (host_matrix.size() != static_cast<size_t>(num_states * num_states)) {
-        std::cerr << "Error: Host matrix size does not match device matrix dimensions." << std::endl;
+void TransitionMatrix::copy_to_device(const float* host_matrix_data) {
+    if (!host_matrix_data) {
+        std::cerr << "Error: Null pointer provided for host_matrix_data in copy_to_device." << std::endl;
         return;
     }
     size_t matrix_size_bytes = num_states * num_states * sizeof(float);
-    CHECK_CUDA_ERROR(cudaMemcpy(data, host_matrix.data(), matrix_size_bytes, cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERROR(cudaMemcpy(data, host_matrix_data, matrix_size_bytes, cudaMemcpyHostToDevice));
 }
 
-void TransitionMatrix::copy_to_host(std::vector<float>& host_matrix) {
-    host_matrix.resize(num_states * num_states);
+void TransitionMatrix::copy_to_host(float* host_matrix_data) {
+    if (!host_matrix_data) {
+        std::cerr << "Error: Null pointer provided for host_matrix_data in copy_to_host." << std::endl;
+        return;
+    }
     size_t matrix_size_bytes = num_states * num_states * sizeof(float);
-    CHECK_CUDA_ERROR(cudaMemcpy(host_matrix.data(), data, matrix_size_bytes, cudaMemcpyDeviceToHost));
+    CHECK_CUDA_ERROR(cudaMemcpy(host_matrix_data, data, matrix_size_bytes, cudaMemcpyDeviceToHost));
 }
 
 void TransitionMatrix::print_matrix(int max_dim) {
-    std::vector<float> host_matrix;
-    copy_to_host(host_matrix);
+    std::vector<float> host_vector(num_states * num_states); // Create a temporary std::vector
+    copy_to_host(host_vector.data()); // Use the raw pointer interface
 
     std::cout << "Transition Matrix (first " << std::min(max_dim, num_states) << "x" << std::min(max_dim, num_states) << "):" << std::endl;
     for (int i = 0; i < std::min(max_dim, num_states); ++i) {
         for (int j = 0; j < std::min(max_dim, num_states); ++j) {
-            std::cout << std::fixed << std::setprecision(4) << std::setw(8) << host_matrix[i * num_states + j] << " ";
+            std::cout << std::fixed << std::setprecision(4) << std::setw(8) << host_vector[i * num_states + j] << " ";
         }
         std::cout << std::endl;
     }
@@ -229,7 +232,7 @@ void initialize_synthetic_grid_world(TransitionMatrix& matrix, int grid_dim) {
     // std::cout << "DEBUG: Expected sum (num_states): " << num_states << std::endl;
 
 
-    matrix.copy_to_device(host_matrix);
+    matrix.copy_to_device(host_matrix.data()); // Pass raw pointer from std::vector
 }
 
 
@@ -255,8 +258,9 @@ void mcl_iteration_cuda(TransitionMatrix& matrix, float inflation_factor) {
 }
 
 std::vector<State> extract_clusters_from_probabilities(const TransitionMatrix& matrix, float probability_threshold, int grid_dim) {
-    std::vector<float> host_matrix;
-    const_cast<TransitionMatrix&>(matrix).copy_to_host(host_matrix); // const_cast needed for non-const copy_to_host
+    std::vector<float> host_vector(matrix.num_states * matrix.num_states); // Create a temporary std::vector
+    // const_cast is okay here as copy_to_host reads from device and writes to host_vector.data(), not modifying matrix's device data.
+    const_cast<TransitionMatrix&>(matrix).copy_to_host(host_vector.data()); 
 
     std::vector<State> clusters;
     int num_states = matrix.num_states;
@@ -281,7 +285,7 @@ std::vector<State> extract_clusters_from_probabilities(const TransitionMatrix& m
     // and group states based on which attractor column they belong to.
     for (int i = 0; i < num_states; ++i) {
         // Consider the diagonal element M_ii as the "belief" or "attraction strength" of state i
-        float prob = host_matrix[i * num_states + i]; 
+        float prob = host_vector[i * num_states + i]; 
         if (prob > probability_threshold) {
             State s;
             s.x = static_cast<float>(i % grid_dim);
@@ -302,8 +306,8 @@ std::vector<State> extract_clusters_from_probabilities(const TransitionMatrix& m
         float max_prob = -1.0f;
         int max_idx = -1;
         for(int i=0; i < num_states; ++i) {
-            if(host_matrix[i*num_states + i] > max_prob){
-                max_prob = host_matrix[i*num_states + i];
+            if(host_vector[i*num_states + i] > max_prob){
+                max_prob = host_vector[i*num_states + i];
                 max_idx = i;
             }
         }
