@@ -34,17 +34,20 @@ int main(int argc, char* argv[]) {
     if (argc > 3) inflation_factor = std::stof(argv[3]);
     if (argc > 4) probability_threshold = std::stof(argv[4]);
 
-    int num_states = grid_dim * grid_dim;
+    // Use the global const NUM_STATES if grid_dim is not changed by args,
+    // otherwise calculate local num_states.
+    // For simplicity here, always recalculate num_states based on potentially modified grid_dim.
+    int current_num_states = grid_dim * grid_dim; 
 
     std::cout << "Starting MCL Localization Simulation..." << std::endl;
-    std::cout << "Grid Dimensions: " << grid_dim << "x" << grid_dim << " (" << num_states << " states)" << std::endl;
+    std::cout << "Grid Dimensions: " << grid_dim << "x" << grid_dim << " (" << current_num_states << " states)" << std::endl;
     std::cout << "Number of Iterations: " << num_iterations << std::endl;
     std::cout << "Inflation Factor: " << inflation_factor << std::endl;
     std::cout << "Probability Threshold for Cluster Extraction: " << probability_threshold << std::endl;
     std::cout << "-------------------------------------------------" << std::endl;
 
     // Initialize Transition Matrix
-    TransitionMatrix matrix(num_states);
+    TransitionMatrix matrix(current_num_states);
     std::cout << "Initializing synthetic grid world..." << std::endl;
     initialize_synthetic_grid_world(matrix, grid_dim);
     
@@ -57,7 +60,7 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < num_iterations; ++i) {
         mcl_iteration_cuda(matrix, inflation_factor);
         std::cout << "Completed Iteration " << i + 1 << "/" << num_iterations << std::endl;
-        if (num_states <= 100) { // Only print for small matrices
+        if (current_num_states <= 100) { // Only print for small matrices
              std::cout << "Matrix after iteration " << i+1 << " (sample):" << std::endl;
              matrix.print_matrix(std::min(grid_dim,10));
         }
@@ -77,7 +80,7 @@ int main(int argc, char* argv[]) {
     } else {
         std::cout << "Found " << clusters.size() << " significant state(s):" << std::endl;
         for (const auto& state : clusters) {
-            std::cout << "  State (" << state.x <&lt ", " << state.y << ") - Probability: " << state.probability << std::endl;
+            std::cout << "  State (" << state.x << ", " << state.y << ") - Probability: " << state.probability << std::endl;
         }
     }
     std::cout << "-------------------------------------------------" << std::endl;
