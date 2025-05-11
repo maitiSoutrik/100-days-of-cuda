@@ -1,10 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
-project(day063_mcl_localization CUDA CXX)
+project(day063_mcl_localization CXX CUDA) # Changed language order
 
 set(CMAKE_CUDA_ARCHITECTURES 53)
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 -std=c++14") # Explicitly set C++ standard for NVCC host compilation
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CUDA_STANDARD 14) # Ensure NVCC uses C++14 for host code
+set(CMAKE_CUDA_STANDARD_REQUIRED True)
 
 # Add GoogleTest
 include(FetchContent)
