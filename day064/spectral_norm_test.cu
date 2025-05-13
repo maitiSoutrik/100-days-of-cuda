@@ -34,6 +34,8 @@ protected:
     cublasHandle_t handle;
     float *d_u_test, *d_v_test; // General purpose workspace vectors
 
+    SpectralNormTest() : d_u_test(nullptr), d_v_test(nullptr) {} // Initialize pointers
+
     void SetUp() override {
         CHECK_CUBLAS_ERROR(cublasCreate(&handle));
     }
