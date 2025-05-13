@@ -85,6 +85,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 61  | 2025-05-09 | Fisher Information Matrix                       | [Link](./day061/) |                    |
 | 62  | 2025-05-10 | Batched Vector L2 Norm (Shared Memory Reduction) | [Link](./day062/) |                    |
 | 63  | 2025-05-11 | Parallel Markov Chain Clustering for Robot Localization | [Link](./day063/) | :heavy_check_mark: |
+| 64  | 2025-05-12 | Spectral Normalization in GANs (cuBLAS Power Iteration) | [Link](./day064/) |                    |
 
 ## Rules
 
