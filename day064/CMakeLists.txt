@@ -16,7 +16,7 @@ add_library(spectral_norm_lib STATIC
     spectral_norm.cuh
 )
 target_include_directories(spectral_norm_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(spectral_norm_lib PRIVATE ${CUDA_LIBRARIES} cublas) # Added cublas for potential helper functions
+target_link_libraries(spectral_norm_lib PRIVATE ${CUDA_LIBRARIES} cublas ${CUDA_CURAND_LIBRARIES}) # Added cublas and curand
 
 # Define the main application executable
 add_executable(spectral_norm_app spectral_norm_main.cu)
