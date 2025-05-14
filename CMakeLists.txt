@@ -5,6 +5,18 @@ find_package(CUDA REQUIRED)
 # Enable CTest at the root level so all subdirectory tests are discoverable
 enable_testing()
 
+# Google Test support using FetchContent
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG    release-1.12.1 # Or a more recent stable tag, e.g. main or a specific release
+)
+# For newer versions of CMake (3.11+), FetchContent_MakeAvailable is preferred.
+# For older versions, you might need to use FetchContent_GetProperties and manually add_subdirectory.
+FetchContent_MakeAvailable(googletest)
+
+
 # CI/CD Documentation
 # ==================
 #
@@ -101,5 +113,6 @@ add_subdirectory(day062)
 add_subdirectory(day063)
 add_subdirectory(day064)
 add_subdirectory(day065)
+add_subdirectory(day066)
 # Add a badge for each completed day to README.md
 # etc.
