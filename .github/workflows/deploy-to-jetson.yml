@@ -104,9 +104,21 @@ jobs:
           REPO_DIR="/home/drboom/git_repos/100-days-of-cuda"
           BUILD_DIR="${REPO_DIR}/build"
           LOGS_DIR="${REPO_DIR}/logs"
+          # Define common input and output directories within the build directory for CI consistency
+          CI_INPUTS_DIR="${BUILD_DIR}/inputs"
+          CI_OUTPUT_DIR="${BUILD_DIR}/output"
 
-          # Ensure logs directory exists
+
+          # Ensure logs, inputs, and output directories exist
           mkdir -p "${LOGS_DIR}"
+          mkdir -p "${CI_INPUTS_DIR}" # For placing test files like audio
+          mkdir -p "${CI_OUTPUT_DIR}" # For saving generated files like MFCCs
+
+          # Note: Input files like 'audio-sample-cuda-challenge.wav' need to be present in CI_INPUTS_DIR.
+          # This might require an earlier step in the CI to copy them from the repo source
+          # (e.g., from a 'project_data' folder in the repo root) to ${CI_INPUTS_DIR} on the Jetson.
+          # For now, this script assumes they are already there. Example:
+          # cp ${REPO_DIR}/project_data/audio-sample-cuda-challenge.wav ${CI_INPUTS_DIR}/
 
           echo "Running executables..."
           cd "${BUILD_DIR}" # Start from build dir
@@ -184,6 +196,21 @@ jobs:
                     DATA_FILE="/home/drboom/cuda-data-sets/imu-data.csv"
                     ./${REL_EXEC_PATH} "${DATA_FILE}" > "${LOG_FILE}" 2>&1
                     sleep 5
+                  elif [[ "${EXEC_NAME}" == "mfcc_benchmark" && "${DAY_NAME}" == "day066" ]]; then
+                    echo "Running mfcc_benchmark for Day066..."
+                    INPUT_WAV="${CI_INPUTS_DIR}/audio-sample-cuda-challenge.wav"
+                    OUTPUT_MFCC="${CI_OUTPUT_DIR}/mfccs_day066.txt"
+                    # Check if input WAV exists
+                    if [ ! -f "${INPUT_WAV}" ]; then
+                      echo "Error: Input audio file ${INPUT_WAV} not found for Day066 mfcc_benchmark."
+                      # Optionally, create a dummy input or skip, here we'll log error and continue
+                      echo "Please ensure audio-sample-cuda-challenge.wav is in ${CI_INPUTS_DIR}" > "${LOG_FILE}" 2>&1
+                    else
+                      echo "Running: ./${REL_EXEC_PATH} ${INPUT_WAV} ${OUTPUT_MFCC}"
+                      ./${REL_EXEC_PATH} "${INPUT_WAV}" "${OUTPUT_MFCC}" > "${LOG_FILE}" 2>&1
+                      echo "MFCC benchmark for Day066 finished. Output in ${OUTPUT_MFCC}, log in ${LOG_FILE}"
+                    fi
+                    sleep 5
                   # Add specific handling for Day 40 file input
                   elif [[ "${EXEC_NAME}" == "texture_interpolation" && "${DAY_NAME}" == "day040" ]]; then
                       echo "Running ${EXEC_NAME} with default file input..."
@@ -223,3 +250,16 @@ jobs:
           chmod +x run_execs.sh
           scp -i ~/.ssh/jetson_ci_key_nopass run_execs.sh drboom@192.168.1.184:~/run_execs.sh
           ssh -i ~/.ssh/jetson_ci_key_nopass drboom@192.168.1.184 "chmod +x ~/run_execs.sh && ~/run_execs.sh && rm ~/run_execs.sh"
+
+      - name: Upload MFCC Output Artifact (Day066)
+        if: always() # Run even if previous steps fail, to capture any partial output
+        uses: actions/upload-artifact@v3
+        with:
+          name: mfcc_output_day066
+          path: | # This path is on the GitHub runner, needs to be SCP'd from Jetson first
+            # Placeholder: We need to SCP the file from Jetson to runner first
+            # For now, this step won't find the file unless manually placed on runner.
+            # TODO: Add SCP step to bring mfccs_day066.txt from Jetson to runner workspace
+            # Example: scp drboom@192.168.1.184:/home/drboom/git_repos/100-days-of-cuda/build/output/mfccs_day066.txt ./mfccs_day066.txt
+            ./mfccs_day066.txt # Assuming it's copied to runner's current dir
+          if-no-files-found: warn # 'warn' or 'error' or 'ignore'
