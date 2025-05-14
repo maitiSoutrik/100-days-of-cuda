@@ -87,6 +87,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 63  | 2025-05-11 | Parallel Markov Chain Clustering for Robot Localization | [Link](./day063/) | :heavy_check_mark: |
 | 64  | 2025-05-12 | Spectral Normalization in GANs (cuBLAS Power Iteration) | [Link](./day064/) |                    |
 | 65  | 2025-05-13 | GEGLU Activation Function Implementation | [Link](./day065/) |                    |
+| 66  | 2025-05-14 | GPU-Accelerated MFCC Feature Extraction | [Link](./day066/) |                    |
 
 ## Rules
 
