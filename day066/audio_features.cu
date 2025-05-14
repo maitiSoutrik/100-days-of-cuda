@@ -281,9 +281,9 @@ void GpuMfccExtractor::cleanup() {
     d_mel_filterbank_flat_ = d_dct_matrix_flat_ = nullptr;
 
     if (fft_plan_r2c_) cufftDestroy(fft_plan_r2c_);
-    if (dct_plan_r2r_) cufftDestroy(dct_plan_r2r_);
+    // if (dct_plan_r2r_) cufftDestroy(dct_plan_r2r_); // Not creating this plan if using custom DCT
     fft_plan_r2c_ = 0;
-    dct_plan_r2r_ = 0;
+    dct_plan_r2r_ = 0; // Ensure it's zeroed
     initialized_ = false;
 }
 
@@ -385,25 +385,27 @@ bool GpuMfccExtractor::initializePlans(int num_frames) {
     CHECK_CUFFT_ERROR(cufft_err);
     if (cufft_err != CUFFT_SUCCESS) return false;
 
-    // R2R DCT plan (using cuFFT for DCT-II)
-    // Input to DCT is Log Mel Energies (num_frames x n_mels_)
-    // Output is MFCCs (num_frames x n_mels_)
-    int n_dct[] = {n_mels_};
-    int idist_dct = n_mels_;
-    int odist_dct = n_mels_;
+    // R2R DCT plan (using cuFFT for DCT-II) - We are now using a custom DCT kernel, so this plan is not strictly needed.
+    // Commenting out to avoid issues if CUFFT_R2R is undefined on target.
+    /*
+    if (n_mels_ > 0) { // Only create plan if n_mels is valid
+        int n_dct[] = {n_mels_};
+        int idist_dct = n_mels_;
+        int odist_dct = n_mels_;
 
-    cufft_err = cufftPlanMany(&dct_plan_r2r_, rank, n_dct,
-                              nullptr, istride, idist_dct,
-                              nullptr, ostride, odist_dct,
-                              CUFFT_R2R, num_frames); // CUFFT_R2R with appropriate kind for DCT-II
-                                                     // For DCT-II, kind is not explicitly set here,
-                                                     // but cufftExecR2R with real input/output implies it.
-                                                     // More specific DCT types might need cufftXtMakePlan(),
-                                                     // but basic R2R often suffices for DCT-II like transforms.
-                                                     // Let's assume this is sufficient for now.
-                                                     // Libs like TorchAudio use cuFFT's R2R for DCT.
-    CHECK_CUFFT_ERROR(cufft_err);
-    if (cufft_err != CUFFT_SUCCESS) return false;
+        cufft_err = cufftPlanMany(&dct_plan_r2r_, rank, n_dct,
+                                nullptr, istride, idist_dct,
+                                nullptr, ostride, odist_dct,
+                                CUFFT_R2R, num_frames); 
+        CHECK_CUFFT_ERROR(cufft_err);
+        if (cufft_err != CUFFT_SUCCESS) {
+            std::cerr << "Failed to create DCT plan with CUFFT_R2R. CUFFT_R2R might be undefined on this CUDA version." << std::endl;
+            // return false; // Or proceed without this plan if custom DCT is the only path
+        }
+    }
+    */
+    // Since we are using custom DCT, dct_plan_r2r_ is not essential.
+    // Ensure dct_plan_r2r_ remains 0 if not created. It's initialized to 0 in constructor and cleanup.
     
     return true;
 }
