@@ -540,11 +540,27 @@ bool GpuMfccExtractor::computeMfccs(const std::vector<float>& h_audio_samples, s
     // --- 8. DCT ---
     // Input: d_log_mel_energies_ (num_frames x n_mels_)
     // Output: d_mfcc_temp_      (num_frames x n_mels_)
-    cufft_err = cufftExecR2R(dct_plan_r2r_, reinterpret_cast<cufftReal*>(d_log_mel_energies_), reinterpret_cast<cufftReal*>(d_mfcc_temp_));
-    CHECK_CUFFT_ERROR(cufft_err); if(cufft_err != CUFFT_SUCCESS) return false;
-    // If using custom DCT kernel:
-    // dct_kernel<<<(num_frames * n_mels_ + 255) / 256, 256>>>(d_log_mel_energies_, d_dct_matrix_flat_, d_mfcc_temp_, num_frames, n_mels_, n_mels_);
-    // cuda_err = cudaGetLastError(); CHECK_CUDA_ERROR(cuda_err); if(cuda_err != cudaSuccess) return false;
+
+    // cufft_err = cufftExecR2R(dct_plan_r2r_, reinterpret_cast<cufftReal*>(d_log_mel_energies_), reinterpret_cast<cufftReal*>(d_mfcc_temp_));
+    // CHECK_CUFFT_ERROR(cufft_err); if(cufft_err != CUFFT_SUCCESS) return false;
+    
+    // Using custom DCT kernel instead:
+    if (n_mels_ > 0) {
+        dim3 block_dct(n_mels_); // Threads = number of output DCT coeffs for this frame (which is n_mels_)
+        dim3 grid_dct(num_frames);  // Blocks = number of frames
+        if (n_mels_ <= 1024) { // Check blockDim validity
+            dct_kernel<<<grid_dct, block_dct>>>(
+                d_log_mel_energies_, d_dct_matrix_flat_, d_mfcc_temp_,
+                num_frames, n_mels_, n_mels_ /* n_dct_coeffs_in_matrix is n_mels for our square DCT matrix */
+            );
+            cuda_err = cudaGetLastError(); CHECK_CUDA_ERROR(cuda_err); if(cuda_err != cudaSuccess) return false;
+        } else {
+            std::cerr << "Warning: Custom DCT kernel not launched due to invalid n_mels for blockDim: " << n_mels_ << std::endl;
+            cudaMemset(d_mfcc_temp_, 0, num_frames * n_mels_ * sizeof(float)); // Keep pipeline going
+        }
+    } else {
+        cudaMemset(d_mfcc_temp_, 0, num_frames * n_mels_ * sizeof(float));
+    }
 
 
     // --- 9. Select N_MFCC coefficients ---
