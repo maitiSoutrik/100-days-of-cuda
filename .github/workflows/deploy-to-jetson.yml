@@ -253,7 +253,7 @@ jobs:
 
       - name: Upload MFCC Output Artifact (Day066)
         if: always() # Run even if previous steps fail, to capture any partial output
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: mfcc_output_day066
           path: | # This path is on the GitHub runner, needs to be SCP'd from Jetson first
