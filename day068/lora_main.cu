@@ -41,8 +41,8 @@ bool compare_vectors(const float* vec1, const float* vec2, int size, float toler
 
 int main() {
     // --- Configuration ---
-    const int d_model = 4096;   // Dimension of the model's features (Increased)
-    const int rank = 32;        // Rank for LoRA decomposition (Increased)
+    const int d_model = 4096;   // Dimension of the model's features
+    const int rank = 64;        // Rank for LoRA decomposition (Increased further)
     const float alpha = 1.0f;   // Scaling factor for LoRA
     const int num_iterations = 1000; // Number of forward passes for benchmarking
 
