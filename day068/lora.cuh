@@ -2,6 +2,7 @@
 #define LORA_CUH
 
 #include <cuda_runtime.h>
+#include <cublas_v2.h> // For cuBLAS
 #include <vector>
 #include <stdexcept> // For std::runtime_error
 #include <iostream> // For std::cerr
@@ -17,6 +18,19 @@
         } \
     } while (0)
 
+// cuBLAS error checking macro
+const char* cublasGetErrorString(cublasStatus_t status); // Forward declaration for helper
+#define CHECK_CUBLAS_ERROR(status) \
+    do { \
+        cublasStatus_t status_ = (status); \
+        if (status_ != CUBLAS_STATUS_SUCCESS) { \
+            std::cerr << "cuBLAS error in " << __FILE__ << " at line " << __LINE__ \
+                      << ": " << cublasGetErrorString(status_) << std::endl; \
+            throw std::runtime_error(cublasGetErrorString(status_)); \
+        } \
+    } while (0)
+
+
 // Structure to hold LoRA parameters
 struct LoRAParameters {
     // h_A and d_A represent the down-projection matrix A (rank x d_model)
@@ -29,6 +43,8 @@ struct LoRAParameters {
     int d_model;    // Original model dimension (input/output features)
     int rank;       // Rank of the LoRA decomposition
     float alpha;    // Scaling factor
+
+    cublasHandle_t cublas_handle; // cuBLAS handle
 };
 
 // Function declarations

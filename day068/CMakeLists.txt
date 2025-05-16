@@ -16,7 +16,8 @@ add_library(lora_lib STATIC
     lora.cuh
 )
 target_include_directories(lora_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(lora_lib PRIVATE ${CUDA_LIBRARIES} m) # m for math library if needed
+# Link against CUDA runtime, cuBLAS, and math library
+target_link_libraries(lora_lib PRIVATE ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES} m)
 
 # Main benchmark executable
 add_executable(lora_benchmark
