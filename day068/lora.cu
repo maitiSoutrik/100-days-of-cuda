@@ -161,40 +161,31 @@ void loraForwardGPU(const float* d_input, float* d_lora_output, const LoRAParame
     const float const_beta_zero = 0.0f; // Beta for sgemv
 
     // 1. Compute temp_vec = A * input
-    // A is (rank x d_model) row-major. x is (d_model x 1). temp_vec is (rank x 1).
-    // cublasSgemv(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy)
-    // For A (M rows, N cols) row-major, to compute Y = A*X:
-    // trans = CUBLAS_OP_N (no transpose)
-    // m = M (number of rows in A, which is params.rank)
-    // n = N (number of columns in A, which is params.d_model)
-    // A = params.d_A
-    // lda = N (leading dimension of A, which is params.d_model for row-major)
-    // x = d_input
-    // incx = 1
-    // y = d_temp_vec
-    // incy = 1
-    CHECK_CUBLAS_ERROR(cublasSgemv(params.cublas_handle, 
-                                   CUBLAS_OP_N, 
-                                   params.rank, params.d_model, 
-                                   &const_alpha_one, 
-                                   params.d_A, params.d_model, // A is rank x d_model, lda is d_model
-                                   d_input, 1, 
-                                   &const_beta_zero, 
+    // A is (params.rank x params.d_model) row-major.
+    // To compute Y = A_rm * X with A_rm being M x N (M=params.rank, N=params.d_model):
+    // Use cublasSgemv(handle, CUBLAS_OP_T, N, M, alpha, A_rm_ptr, N, X, incx, beta, Y, incy)
+    CHECK_CUBLAS_ERROR(cublasSgemv(params.cublas_handle,
+                                   CUBLAS_OP_T,            // Transpose A (effectively treating row-major as col-major)
+                                   params.d_model,         // N (number of columns in A_rm)
+                                   params.rank,            // M (number of rows in A_rm)
+                                   &const_alpha_one,
+                                   params.d_A,             // Pointer to A_rm
+                                   params.d_model,         // LDA (N, number of columns in A_rm)
+                                   d_input, 1,
+                                   &const_beta_zero,
                                    d_temp_vec, 1));
 
     // 2. Compute lora_output = B * temp_vec
-    // B is (d_model x rank) row-major. temp_vec is (rank x 1). lora_output is (d_model x 1).
-    // m = params.d_model (number of rows in B)
-    // n = params.rank (number of columns in B)
-    // B = params.d_B
-    // lda = params.rank (leading dimension of B, which is params.rank for row-major)
-    // x = d_temp_vec
-    // y = d_lora_output
+    // B is (params.d_model x params.rank) row-major.
+    // To compute Y = B_rm * X with B_rm being M x N (M=params.d_model, N=params.rank):
+    // Use cublasSgemv(handle, CUBLAS_OP_T, N, M, alpha, B_rm_ptr, N, X, incx, beta, Y, incy)
     CHECK_CUBLAS_ERROR(cublasSgemv(params.cublas_handle,
-                                   CUBLAS_OP_N,
-                                   params.d_model, params.rank,
+                                   CUBLAS_OP_T,            // Transpose B
+                                   params.rank,            // N (number of columns in B_rm)
+                                   params.d_model,         // M (number of rows in B_rm)
                                    &const_alpha_one,
-                                   params.d_B, params.rank, // B is d_model x rank, lda is rank
+                                   params.d_B,             // Pointer to B_rm
+                                   params.rank,            // LDA (N, number of columns in B_rm)
                                    d_temp_vec, 1,
                                    &const_beta_zero,
                                    d_lora_output, 1));
