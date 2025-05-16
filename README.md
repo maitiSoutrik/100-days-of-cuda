@@ -88,6 +88,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 64  | 2025-05-12 | Spectral Normalization in GANs (cuBLAS Power Iteration) | [Link](./day064/) |                    |
 | 65  | 2025-05-13 | GEGLU Activation Function Implementation | [Link](./day065/) |                    |
 | 66  | 2025-05-14 | GPU-Accelerated MFCC Feature Extraction | [Link](./day066/) |                    |
+| 67  | 2025-05-15 | SwiGLU Activation and Gradient Computation | [Link](./day067/) |                    |
 
 ## Rules
 
