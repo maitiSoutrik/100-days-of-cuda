@@ -90,6 +90,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 66  | 2025-05-14 | GPU-Accelerated MFCC Feature Extraction | [Link](./day066/) |                    |
 | 67  | 2025-05-15 | SwiGLU Activation and Gradient Computation | [Link](./day067/) |                    |
 | 68  | 2025-05-16 | LoRA Implementation and Benchmarking | [Link](./day068/) |                    |
+| 69  | 2025-05-17 | Parallel Password Cracking (FNV-1a) | [Link](./day069/) |                    |
 
 ## Rules
 
