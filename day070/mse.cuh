@@ -9,8 +9,9 @@
 
 // Thrust includes
 #include <thrust/device_ptr.h>
+#include <thrust/transform.h>        // For thrust::transform
 #include <thrust/transform_reduce.h>
-#include <thrust/functional.h>
+#include <thrust/functional.h>       // For thrust::plus, thrust::minus
 
 // Macro for checking CUDA errors
 #define CHECK_CUDA_ERROR(val) checkCuda((val), #val, __FILE__, __LINE__)
