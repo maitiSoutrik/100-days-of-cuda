@@ -4,8 +4,13 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cuda_runtime.h>
-#include <cublas_v2.h> // For cuBLAS
+#include <cublas_v2.h> // For cuBLAS (though will be replaced by Thrust for mse_gpu)
 #include <device_launch_parameters.h> // For blockIdx, threadIdx etc.
+
+// Thrust includes
+#include <thrust/device_ptr.h>
+#include <thrust/transform_reduce.h>
+#include <thrust/functional.h>
 
 // Macro for checking CUDA errors
 #define CHECK_CUDA_ERROR(val) checkCuda((val), #val, __FILE__, __LINE__)

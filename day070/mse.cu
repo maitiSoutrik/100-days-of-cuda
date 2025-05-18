@@ -59,47 +59,53 @@ float mse_cpu(const float* predictions, const float* targets, int N) {
     return static_cast<float>(sum_sq_error / N);
 }
 
-// GPU implementation of MSE using cuBLAS
+// Functor for (prediction - target)^2 used by Thrust
+struct squared_difference_functor {
+    __host__ __device__
+    float operator()(const float& p, const float& t) const {
+        float diff = p - t;
+        return diff * diff;
+    }
+};
+
+// GPU implementation of MSE using Thrust
 void mse_gpu(const float* h_predictions, const float* h_targets, int N, float* mse_result) {
     if (N == 0) {
         *mse_result = 0.0f;
         return;
     }
 
-    cublasHandle_t handle;
-    CHECK_CUBLAS_ERROR(cublasCreate(&handle));
-
-    float *d_predictions, *d_targets, *d_diff;
+    float *d_predictions, *d_targets;
 
     // Allocate memory on the device
     CHECK_CUDA_ERROR(cudaMalloc(&d_predictions, N * sizeof(float)));
     CHECK_CUDA_ERROR(cudaMalloc(&d_targets, N * sizeof(float)));
-    CHECK_CUDA_ERROR(cudaMalloc(&d_diff, N * sizeof(float))); // To store (predictions - targets)
 
     // Copy data from host to device
     CHECK_CUDA_ERROR(cudaMemcpy(d_predictions, h_predictions, N * sizeof(float), cudaMemcpyHostToDevice));
     CHECK_CUDA_ERROR(cudaMemcpy(d_targets, h_targets, N * sizeof(float), cudaMemcpyHostToDevice));
 
-    // Calculate D = P - T
-    // 1. Copy P to D: d_diff = d_predictions
-    CHECK_CUBLAS_ERROR(cublasScopy(handle, N, d_predictions, 1, d_diff, 1));
-    
-    // 2. D = -1*T + D: d_diff = -1.0f * d_targets + d_diff
-    float alpha = -1.0f;
-    CHECK_CUBLAS_ERROR(cublasSaxpy(handle, N, &alpha, d_targets, 1, d_diff, 1));
+    // Wrap raw device pointers with thrust::device_ptr
+    thrust::device_ptr<const float> d_predictions_ptr(d_predictions);
+    thrust::device_ptr<const float> d_targets_ptr(d_targets);
 
-    // Calculate sum_sq_error = D . D (dot product of d_diff with itself)
-    float sum_sq_error_host; // cublasSdot result is written to a host pointer
-    // Ensure cuBLAS pointer mode is host for the result of sdot
-    // (This is the default, but can be set explicitly if needed: cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST))
-    CHECK_CUBLAS_ERROR(cublasSdot(handle, N, d_diff, 1, d_diff, 1, &sum_sq_error_host));
+    // Calculate sum of squared errors using thrust::transform_reduce
+    // The transform operation is (prediction - target)^2, applied element-wise.
+    // The reduction operation is sum.
+    float sum_sq_error = thrust::transform_reduce(
+        d_predictions_ptr,                            // Start of first input range (predictions)
+        d_predictions_ptr + N,                        // End of first input range
+        d_targets_ptr,                                // Start of second input range (targets)
+        0.0f,                                         // Initial value for the reduction
+        thrust::plus<float>(),                        // Reduction operation (summation)
+        squared_difference_functor()                  // Binary transform operation
+    );
     
-    *mse_result = sum_sq_error_host / static_cast<float>(N);
+    *mse_result = sum_sq_error / static_cast<float>(N);
 
     // Free device memory
     CHECK_CUDA_ERROR(cudaFree(d_predictions));
     CHECK_CUDA_ERROR(cudaFree(d_targets));
-    CHECK_CUDA_ERROR(cudaFree(d_diff));
     
-    CHECK_CUBLAS_ERROR(cublasDestroy(handle));
+    // No explicit cuBLAS handle to destroy for Thrust in this case
 }
