@@ -23,8 +23,8 @@ add_library(mse_lib STATIC
 )
 
 # Link CUDA runtime library. Using ${CUDA_LIBRARIES} for broader compatibility.
-# If specific libraries like cuBLAS were needed, they'd be added here.
-target_link_libraries(mse_lib PRIVATE ${CUDA_LIBRARIES} m) # m for math library (sqrt, etc.)
+# Link cuBLAS library as it's now used in mse.cu
+target_link_libraries(mse_lib PRIVATE ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES} m) # m for math library (sqrt, etc.)
 
 # Make headers available for executables linking against this library
 target_include_directories(mse_lib PUBLIC

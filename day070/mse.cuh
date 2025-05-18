@@ -4,12 +4,13 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cuda_runtime.h>
+#include <cublas_v2.h> // For cuBLAS
 #include <device_launch_parameters.h> // For blockIdx, threadIdx etc.
 
 // Macro for checking CUDA errors
-#define CHECK_CUDA_ERROR(val) check((val), #val, __FILE__, __LINE__)
+#define CHECK_CUDA_ERROR(val) checkCuda((val), #val, __FILE__, __LINE__)
 template <typename T>
-void check(T result, char const *const func, const char *const file, int const line) {
+void checkCuda(T result, char const *const func, const char *const file, int const line) {
     if (result) {
         fprintf(stderr, "CUDA error at %s:%d code=%d(%s) \"%s\" \n",
                 file, line, static_cast<unsigned int>(result), cudaGetErrorName(result), func);
@@ -17,6 +18,20 @@ void check(T result, char const *const func, const char *const file, int const l
         exit(EXIT_FAILURE);
     }
 }
+
+// Macro for checking cuBLAS errors
+#define CHECK_CUBLAS_ERROR(val) checkCublas((val), #val, __FILE__, __LINE__)
+inline void checkCublas(cublasStatus_t result, char const *const func, const char *const file, int const line) {
+    if (result != CUBLAS_STATUS_SUCCESS) {
+        fprintf(stderr, "cuBLAS error at %s:%d code=%d \"%s\" \n",
+                file, line, static_cast<unsigned int>(result), func);
+        // You might want to map cublasStatus_t to a string name if available/needed
+        // For now, just printing the code.
+        cudaDeviceReset();
+        exit(EXIT_FAILURE);
+    }
+}
+
 
 /**
  * @brief Calculates Mean Squared Error on the CPU.
