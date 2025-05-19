@@ -88,7 +88,7 @@ int main() {
         }
         std::cout << "Using BGR color image." << std::endl;
     } else {
-        std::cerr << "Unsupported C_param = " << C_param <&lt ". Must be 1 or 3 for camera input." << std::endl;
+        std::cerr << "Unsupported C_param = " << C_param << ". Must be 1 or 3 for camera input." << std::endl;
         return -1;
     }
     

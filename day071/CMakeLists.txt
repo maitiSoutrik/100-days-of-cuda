@@ -20,8 +20,8 @@ target_include_directories(group_norm_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(group_norm_lib PRIVATE ${CUDA_LIBRARIES} m) # m for math library (sqrtf etc.)
 
 # Define the main executable
-add_executable(day071_group_norm_main group_norm_main.cu)
-target_link_libraries(day071_group_norm_main PRIVATE group_norm_lib ${OpenCV_LIBS})
+add_executable(group_norm_main group_norm_main.cu)
+target_link_libraries(group_norm_main PRIVATE group_norm_lib ${OpenCV_LIBS})
 
 # Google Test configuration
 include(GoogleTest)
@@ -30,9 +30,9 @@ if(NOT TARGET GTest::gtest)
 endif()
 
 # Define the test executable
-add_executable(day071_group_norm_test group_norm_forward_test.cu)
-target_link_libraries(day071_group_norm_test PRIVATE group_norm_lib GTest::gtest GTest::gmock GTest::gtest_main)
+add_executable(group_norm_test group_norm_forward_test.cu)
+target_link_libraries(group_norm_test PRIVATE group_norm_lib GTest::gtest GTest::gmock GTest::gtest_main)
 
 # Add tests to CTest
 include(CTest)
-add_test(NAME Day71_GroupNormTest COMMAND day071_group_norm_test)
+add_test(NAME Day71_GroupNormTest COMMAND group_norm_test)
