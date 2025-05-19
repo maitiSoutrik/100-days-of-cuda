@@ -183,27 +183,58 @@ int main() {
         std::cout << "\nVerification Failed: GPU and CPU results differ." << std::endl;
     }
     
-    // Display output (optional, first channel if multiple)
-    cv::Mat output_display_mat(H_param, W_param, CV_32FC1);
-    // Copy the first channel of h_output_gpu to output_display_mat
+    // Save output image (first channel if multiple)
+    cv::Mat output_image_to_save(H_param, W_param, CV_32FC1);
+    // Copy the first channel of h_output_gpu to output_image_to_save
+    // Assuming N_param = 1, and we are saving the first channel if C_param > 1
+    // If C_param is 1 (grayscale), this copies the single channel directly.
+    // If C_param is 3, this copies the first channel (e.g., Blue if BGR).
+    // For a more meaningful color output save, one might reconstruct a BGR image.
+    // For simplicity, saving the first channel or the grayscale output.
     for (int h = 0; h < H_param; ++h) {
         for (int w = 0; w < W_param; ++w) {
-            output_display_mat.at<float>(h,w) = h_output_gpu[h * W_param + w]; // Assuming N=1, first channel
+            // Data is in NCHW, so for N=0, C=0:
+            output_image_to_save.at<float>(h,w) = h_output_gpu[0 * C_param * H_param * W_param + 0 * H_param * W_param + h * W_param + w];
         }
     }
-    // Normalize for display if needed (e.g. if values are not in [0,1])
+
+    // Normalize for saving as a viewable image (e.g., 8-bit)
     double minVal, maxVal;
-    cv::minMaxLoc(output_display_mat, &minVal, &maxVal);
+    cv::minMaxLoc(output_image_to_save, &minVal, &maxVal);
+    cv::Mat saveable_image;
     if (maxVal > minVal) {
-         output_display_mat.convertTo(output_display_mat, CV_8U, 255.0/(maxVal - minVal), -minVal * 255.0/(maxVal - minVal));
-    } else {
-        output_display_mat.convertTo(output_display_mat, CV_8U);
+         output_image_to_save.convertTo(saveable_image, CV_8U, 255.0/(maxVal - minVal), -minVal * 255.0/(maxVal - minVal));
+    } else { // Handle cases where all values are the same
+        output_image_to_save.convertTo(saveable_image, CV_8U, 1.0, 0.0); // or just set to a constant gray
     }
 
-    cv::imshow("Original Grayscale", processed_frame); // Show processed input
-    cv::imshow("Group Norm Output (GPU)", output_display_mat);
-    std::cout << "Displaying images. Press any key to close." << std::endl;
-    cv::waitKey(0);
+    std::string output_filename = "group_norm_output.png";
+    std::string input_filename = "processed_input.png";
+    
+    cv::Mat processed_input_saveable;
+    processed_frame.convertTo(processed_input_saveable, CV_8U, 255.0); // Assuming processed_frame is [0,1] float
+
+    bool input_saved = cv::imwrite(input_filename, processed_input_saveable);
+    bool output_saved = cv::imwrite(output_filename, saveable_image);
+
+    if (input_saved) {
+        std::cout << "Processed input frame saved to " << input_filename << std::endl;
+    } else {
+        std::cerr << "Error: Could not save processed input frame." << std::endl;
+    }
+    if (output_saved) {
+        std::cout << "Group normalized output saved to " << output_filename << std::endl;
+    } else {
+        std::cerr << "Error: Could not save group normalized output." << std::endl;
+    }
+
+    // GUI part removed for headless operation
+    // #ifdef ENABLE_GUI
+    // cv::imshow("Original Grayscale", processed_frame); 
+    // cv::imshow("Group Norm Output (GPU)", output_display_mat); // output_display_mat was the old name
+    // std::cout << "Displaying images. Press any key to close." << std::endl;
+    // cv::waitKey(0);
+    // #endif
 
 
     CHECK_CUDA_ERROR(cudaFree(d_input));
@@ -213,7 +244,7 @@ int main() {
     CHECK_CUDA_ERROR(cudaEventDestroy(start_gpu));
     CHECK_CUDA_ERROR(cudaEventDestroy(stop_gpu));
     cap.release();
-    cv::destroyAllWindows();
+    // cv::destroyAllWindows(); // GUI part removed
 
     return success ? 0 : 1;
 }
