@@ -3,6 +3,7 @@
 #include <vector>
 #include <numeric> // For std::iota, std::accumulate
 #include <cmath>   // For std::abs
+#include <random>  // For std::mt19937, std::uniform_real_distribution
 #include <cuda_runtime.h>
 
 // Helper to normalize PMF for tests
