@@ -93,6 +93,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 69  | 2025-05-17 | Parallel Password Cracking (FNV-1a) | [Link](./day069/) |                    |
 | 70  | 2025-05-18 | Mean Squared Error (MSE) Calculation | [Link](./day070/) |                    |
 | 71  | 2025-05-19 | Group Normalization Forward Pass | [Link](./day071/) |                    |
+| 72  | 2025-05-20 | Total Variation Distance (TVD) Loss | [Link](./day072/) |                    |
 
 ## Rules
 
