@@ -2,6 +2,7 @@
 #define TVD_LOSS_CUH
 
 #include <vector>
+#include <cstdio> // For fprintf, stderr
 
 // Error checking macro
 #define CHECK_CUDA_ERROR(err) \
