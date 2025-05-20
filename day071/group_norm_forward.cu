@@ -81,7 +81,8 @@ __global__ void groupNormForwardKernel(
     
     mean = sdata[0];
     variance = sdata[1];
-    float inv_stddev = rsqrtf(variance + epsilon);
+    // Using 1.0f / sqrtf for potentially better precision matching with CPU
+    float inv_stddev = 1.0f / sqrtf(variance + epsilon); 
 
     // Apply normalization and scale/shift
     for (int i = threadIdx.x; i < group_size; i += blockDim.x) {
