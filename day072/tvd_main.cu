@@ -4,6 +4,7 @@
 #include <random>
 #include <numeric>   // For std::accumulate
 #include <iomanip>   // For std::fixed, std::setprecision
+#include <chrono>    // For std::chrono
 #include <cuda_runtime.h>
 
 // Helper function to normalize a vector to sum to 1 (making it a PMF)
