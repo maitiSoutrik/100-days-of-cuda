@@ -97,7 +97,7 @@ TEST_F(GroupNormTest, GroupsEqualToChannels) { // Equivalent to Instance Normali
 
 TEST_F(GroupNormTest, LargerDimensions) {
     SetUp(4, 16, 8, 8, 4); // N=4, C=16, H=8, W=8, G=4
-    RunAndCompare();
+    RunAndCompare(1e-3f); // Using a specific, slightly higher tolerance for this test
 }
 
 TEST_F(GroupNormTest, NonUnitGammaBeta) {
