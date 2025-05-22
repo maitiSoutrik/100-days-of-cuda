@@ -94,6 +94,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 70  | 2025-05-18 | Mean Squared Error (MSE) Calculation | [Link](./day070/) |                    |
 | 71  | 2025-05-19 | Group Normalization Forward Pass | [Link](./day071/) |                    |
 | 72  | 2025-05-20 | Total Variation Distance (TVD) Loss | [Link](./day072/) |                    |
+| 73  | 2025-05-21 | 1D Rotary Positional Embedding (RoPE) | [Link](./day073/) | :heavy_check_mark: |
 
 ## Rules
 
