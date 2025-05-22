@@ -3,6 +3,7 @@
 #include <vector>
 #include <iomanip> // For std::fixed and std::setprecision
 #include <random>   // For std::mt19937 and std::uniform_real_distribution
+#include <stdio.h>
 
 // Helper function to print embeddings for a specific token
 void print_token_embeddings(const std::string& title, const float* embeddings, int token_idx, int embedding_dim, int grid_width) {
@@ -64,7 +65,7 @@ int main() {
 
 
     // Apply 2D RoPE
-    std::cout <&lt "\nApplying 2D RoPE...\n";
+    std::cout << "\nApplying 2D RoPE...\n";
     apply_rope_2d_embeddings_gpu(d_embeddings, height, width, embedding_dim, theta_base);
     CHECK_CUDA_ERROR(cudaDeviceSynchronize()); // Ensure kernel execution is complete
 
@@ -73,7 +74,7 @@ int main() {
     CHECK_CUDA_ERROR(cudaMemcpy(h_transformed_embeddings.data(), d_embeddings, data_size, cudaMemcpyDeviceToHost));
 
     // Print transformed embeddings for a few tokens
-    std::cout <&lt "\nTransformed Embeddings (Sample):\n";
+    std::cout << "\nTransformed Embeddings (Sample):\n";
     print_token_embeddings("Transformed", h_transformed_embeddings.data(), 0, embedding_dim, width); // Token (0,0)
      if (num_tokens > 1) {
         print_token_embeddings("Transformed", h_transformed_embeddings.data(), width + 1, embedding_dim, width); // Token (1,1) if exists
@@ -83,19 +84,19 @@ int main() {
     bool nan_inf_found = false;
     for (int i = 0; i < num_tokens * embedding_dim; ++i) {
         if (std::isnan(h_transformed_embeddings[i]) || std::isinf(h_transformed_embeddings[i])) {
-            std::cerr << "Error: NaN or Inf found in transformed_embeddings at index " << i <&lt std::endl;
+            std::cerr << "Error: NaN or Inf found in transformed_embeddings at index " << i << std::endl;
             nan_inf_found = true;
             break;
         }
     }
     if (!nan_inf_found) {
-        std::cout <&lt "\nVerification: No NaN or Inf values found in transformed embeddings." << std::endl;
+        std::cout << "\nVerification: No NaN or Inf values found in transformed embeddings." << std::endl;
     }
 
 
     // Free device memory
     CHECK_CUDA_ERROR(cudaFree(d_embeddings));
 
-    std::cout <&lt "\n2D RoPE demonstration finished.\n";
+    std::cout << "\n2D RoPE demonstration finished.\n";
     return 0;
 }
