@@ -96,6 +96,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 72  | 2025-05-20 | Total Variation Distance (TVD) Loss | [Link](./day072/) |                    |
 | 73  | 2025-05-21 | 1D Rotary Positional Embedding (RoPE) | [Link](./day073/) | :heavy_check_mark: |
 | 74  | 2025-05-22 | 2D Rotary Positional Embeddings (RoPE-2D) in CUDA | [Link](./day074/) |                    |
+| 75  | 2025-05-23 | Fused Linear Transformation and Softmax Cross-Entropy Loss | [Link](./day075/) | :heavy_check_mark: |
 
 ## Rules
 
