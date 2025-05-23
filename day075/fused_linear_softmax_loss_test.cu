@@ -1,9 +1,10 @@
 #include "fused_linear_softmax_loss.cuh"
- #include "gtest/gtest.h"
- #include <vector>
- #include <cmath>      // For std::exp, std::log
- #include <cfloat>     // For FLT_MAX
- #include <numeric>    // For std::accumulate
+#include "gtest/gtest.h"
+#include <vector>
+#include <cmath>      // For std::exp, std::log
+#include <cfloat>     // For FLT_MAX
+#include <numeric>    // For std::accumulate
+// #include <cfloat> // Already present, but good to double check. FLT_MAX is used.
  #include <algorithm>  // For std::max_element, std::transform
 #include <random>     // For std::mt19937, std::uniform_real_distribution
 

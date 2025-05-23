@@ -6,6 +6,7 @@
 #include <numeric> // For std::iota
 #include <algorithm> // For std::transform, std::exp
 #include <cmath>     // For std::log
+#include <cfloat>    // For FLT_MAX
 
 // Helper function to print a matrix (row-major)
 template<typename T>
