@@ -1,10 +1,11 @@
 #include "fused_linear_softmax_loss.cuh"
-#include "gtest/gtest.h"
-#include <vector>
-#include <cmath>      // For std::exp, std::log
-#include <cfloat>     // For FLT_MAX
-#include <numeric>    // For std::accumulate
-#include <algorithm>  // For std::max_element, std::transform
+ #include "gtest/gtest.h"
+ #include <vector>
+ #include <cmath>      // For std::exp, std::log
+ #include <cfloat>     // For FLT_MAX
+ #include <numeric>    // For std::accumulate
+ #include <algorithm>  // For std::max_element, std::transform
+#include <random>     // For std::mt19937, std::uniform_real_distribution
 
 // CPU reference calculation (can be simplified or made more robust for tests)
 // This is similar to the one in main.cu for consistency.
