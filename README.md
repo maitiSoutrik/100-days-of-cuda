@@ -98,6 +98,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 74  | 2025-05-22 | 2D Rotary Positional Embeddings (RoPE-2D) in CUDA | [Link](./day074/) |                    |
 | 75  | 2025-05-23 | Fused Linear Transformation and Softmax Cross-Entropy Loss | [Link](./day075/) | :heavy_check_mark: |
 | 76  | 2025-05-24 | Contrastive Loss (Forward & Backward) | [Link](./day076/) |                    |
+| 77  | 2025-05-25 | Huber Loss Implementation in CUDA | [Link](./day077/) |                    |
 
 ## Rules
 
