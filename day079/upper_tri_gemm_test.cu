@@ -2,6 +2,19 @@
 #include "upper_tri_gemm.cuh"
 #include <vector>
 #include <numeric> // For std::iota
+#include <iostream> // For std::cerr
+
+// CUDA error checking macro
+#define CHECK_CUDA_ERROR(val) checkCuda((val), #val, __FILE__, __LINE__)
+void checkCuda(cudaError_t result, char const *const func, const char *const file, int const line) {
+    if (result) {
+        std::cerr << "CUDA error = " << static_cast<unsigned int>(result) << " (" << cudaGetErrorString(result) << ") "
+                  << "at " << file << ":" << line << " '" << func << "' \n";
+        cudaDeviceReset();
+        // Make sure we fail the test if an error occurs
+        ASSERT_EQ(cudaSuccess, result);
+    }
+}
 
 // Helper function to perform CPU matrix multiplication for verification
 template <typename T>
@@ -64,23 +77,26 @@ protected:
 
         // Perform GPU computation
         T *d_A, *d_B, *d_C;
-        cudaMalloc(&d_A, n * n * sizeof(T));
-        cudaMalloc(&d_B, n * n * sizeof(T));
-        cudaMalloc(&d_C, n * n * sizeof(T));
+        CHECK_CUDA_ERROR(cudaMalloc(&d_A, n * n * sizeof(T)));
+        CHECK_CUDA_ERROR(cudaMalloc(&d_B, n * n * sizeof(T)));
+        CHECK_CUDA_ERROR(cudaMalloc(&d_C, n * n * sizeof(T)));
 
-        cudaMemcpy(d_A, h_A.data(), n * n * sizeof(T), cudaMemcpyHostToDevice);
-        cudaMemcpy(d_B, h_B.data(), n * n * sizeof(T), cudaMemcpyHostToDevice);
+        CHECK_CUDA_ERROR(cudaMemcpy(d_A, h_A.data(), n * n * sizeof(T), cudaMemcpyHostToDevice));
+        CHECK_CUDA_ERROR(cudaMemcpy(d_B, h_B.data(), n * n * sizeof(T), cudaMemcpyHostToDevice));
+        CHECK_CUDA_ERROR(cudaMemset(d_C, 0, n * n * sizeof(T))); // Initialize d_C to 0
 
         dim3 block(2, 2); // Small block size for small matrix
         dim3 grid((n + block.x - 1) / block.x, (n + block.y - 1) / block.y);
 
         gemm_upper_tri<T, 2><<<grid, block>>>(d_A, d_B, d_C, n); // Use BLOCK_SIZE 2 for small test
+        CHECK_CUDA_ERROR(cudaGetLastError()); // Check for errors after kernel launch
+        CHECK_CUDA_ERROR(cudaDeviceSynchronize()); // Wait for kernel to complete and check for errors
 
-        cudaMemcpy(h_C_gpu.data(), d_C, n * n * sizeof(T), cudaMemcpyDeviceToHost);
+        CHECK_CUDA_ERROR(cudaMemcpy(h_C_gpu.data(), d_C, n * n * sizeof(T), cudaMemcpyDeviceToHost));
 
-        cudaFree(d_A);
-        cudaFree(d_B);
-        cudaFree(d_C);
+        CHECK_CUDA_ERROR(cudaFree(d_A));
+        CHECK_CUDA_ERROR(cudaFree(d_B));
+        CHECK_CUDA_ERROR(cudaFree(d_C));
     }
 };
 

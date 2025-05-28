@@ -11,18 +11,29 @@ __global__ void gemm_upper_tri(const T* A, const T* B, T* C, int n) {
     T sum = 0;
 
     for (int t = 0; t < n; t += BLOCK_SIZE) {
-        if (i < n && t + threadIdx.x < n) {
-            A_tile[threadIdx.y][threadIdx.x] = A[i * n + t + threadIdx.x];
+        // Load A_tile elements. A_tile[threadIdx.y][threadIdx.x] corresponds to A[i][t + threadIdx.x].
+        // If the access is out of bounds for A, or if A[i][t + threadIdx.x] is in the lower triangle (i > t + threadIdx.x),
+        // it should be treated as zero. Since input A is already upper triangular, we only need to check bounds.
+        if (i < n && (t + threadIdx.x) < n) {
+            A_tile[threadIdx.y][threadIdx.x] = A[i * n + (t + threadIdx.x)];
+        } else {
+            A_tile[threadIdx.y][threadIdx.x] = 0; // Out of bounds for A
         }
-        if (t + threadIdx.y < n && j < n) {
+
+        // Load B_tile elements. B_tile[threadIdx.y][threadIdx.x] corresponds to B[t + threadIdx.y][j].
+        // If the access is out of bounds for B, or if B[t + threadIdx.y][j] is in the lower triangle (t + threadIdx.y > j),
+        // it should be treated as zero. Since input B is already upper triangular, we only need to check bounds.
+        if ((t + threadIdx.y) < n && j < n) {
             B_tile[threadIdx.y][threadIdx.x] = B[(t + threadIdx.y) * n + j];
+        } else {
+            B_tile[threadIdx.y][threadIdx.x] = 0; // Out of bounds for B
         }
         __syncthreads();
 
-        for (int k = 0; k < BLOCK_SIZE; ++k) {
-            if (i < j) break;
-            if (t + k < n) {
-                sum += A_tile[threadIdx.y][k] * B_tile[k][threadIdx.x];
+        for (int k_idx = 0; k_idx < BLOCK_SIZE; ++k_idx) {
+            int current_k = t + k_idx;
+            if (current_k < n && i <= current_k && current_k <= j) { // Only multiply if elements are in upper triangle
+                sum += A_tile[threadIdx.y][k_idx] * B_tile[k_idx][threadIdx.x];
             }
         }
         __syncthreads();
