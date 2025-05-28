@@ -36,3 +36,5 @@ __global__ void gemm_upper_tri(const T* A, const T* B, T* C, int n) {
 // Explicit instantiations
 template __global__ void gemm_upper_tri<float, 16>(const float*, const float*, float*, int);
 template __global__ void gemm_upper_tri<double, 16>(const double*, const double*, double*, int);
+template __global__ void gemm_upper_tri<float, 2>(const float*, const float*, float*, int);
+template __global__ void gemm_upper_tri<double, 2>(const double*, const double*, double*, int);
