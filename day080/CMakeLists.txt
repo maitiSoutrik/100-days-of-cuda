@@ -33,18 +33,27 @@ add_executable(day080_benchmark
 # Link the benchmark executable against the library
 target_link_libraries(day080_benchmark PRIVATE swish_matrix_ops_lib)
 
-# Enable testing (even if no tests are added immediately, for consistency)
+# Enable testing
 enable_testing()
 
-# Optional: If Google Test is used later, it would be configured here.
-# For now, just enabling CTest.
-# Example for adding a test if a test executable 'day080_tests' is created:
-# add_executable(day080_tests tests/your_test_file.cu)
-# target_link_libraries(day080_tests PRIVATE swish_matrix_ops_lib GTest::gtest GTest::gtest_main)
-# include(GoogleTest)
-# gtest_discover_tests(day080_tests)
+# Configure Google Test
+# Ensure GoogleTest is available (typically handled by FetchContent in root CMakeLists.txt)
+include(GoogleTest)
+
+add_executable(day080_tests
+    tests/swish_matrix_ops_test.cu
+)
+
+target_link_libraries(day080_tests PRIVATE
+    swish_matrix_ops_lib
+    GTest::gtest
+    GTest::gtest_main
+)
+
+gtest_discover_tests(day080_tests)
 
 # Print a message indicating the build target
 message(STATUS "Configuring Day 80: Matrix Multiplication with Swish Activation and Scaling")
 message(STATUS "CUDA Architectures: ${CMAKE_CUDA_ARCHITECTURES}")
 message(STATUS "Benchmark executable: day080_benchmark")
+message(STATUS "Test executable: day080_tests")
