@@ -3,6 +3,7 @@
 
 #include <cuda_runtime.h>
 #include <cmath> // For exp
+#include <cstdio> // For fprintf
 
 // Error checking macro
 #define CHECK_CUDA_ERROR(call) \
