@@ -162,28 +162,11 @@ __global__ void sum_reduction_kernel(const float* d_input, float* d_output, int 
     }
 
     // Write result for this block to global memory
-    // This kernel assumes it's launched with enough blocks to cover N elements
-    // and that d_output is sized for gridDim.x elements if this is part of a multi-stage reduction.
-    // For a single pass reduction to a scalar, this needs to be handled carefully.
-    // If N is small enough for one block:
-    if (blockIdx.x == 0 && tid == 0) {
-        // If only one block is launched, this thread writes the final sum.
-        // This simple version assumes N <= blockDim.x and one block.
-        // For larger N, this kernel would write partial sums.
-        // The current problem has num_distributions as N for this kernel.
-        // If num_distributions is large, this needs to be a multi-stage reduction.
-        // For now, assume num_distributions is small enough for one block to sum d_per_row_loss.
-        if (gridDim.x == 1) { // Only one block, write final sum
-             d_output[0] = s_cache[0];
-        } else { // Multiple blocks, write partial sum for this block
-            // This requires d_output to be an array of size gridDim.x
-            // And a second kernel call to sum these partial sums.
-            // For simplicity, we'll assume num_distributions is small enough.
-            // A more robust reduction is needed for general N.
-            // Let's assume d_output is a single float pointer and use atomicAdd or a sequential sum on CPU for partial sums.
-            // For this exercise, we'll make it simple: if multiple blocks, this writes partial sums.
-            // The main function will handle summing these partial sums if gridDim.x > 1.
-             d_output[blockIdx.x] = s_cache[0];
+    if (tid == 0) {
+        if (gridDim.x == 1) { // Only one block in the grid, this is the final sum.
+            d_output[0] = s_cache[0];
+        } else { // Multiple blocks in the grid, this block writes its partial sum to d_output[blockIdx.x].
+            d_output[blockIdx.x] = s_cache[0];
         }
     }
 }
