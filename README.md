@@ -101,6 +101,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 77  | 2025-05-25 | Huber Loss Implementation in CUDA | [Link](./day077/) |                    |
 | 78  | 2025-05-26 | Dynamic Tanh (DyT) Operation | [Link](./day078/) |                    |
 | 79  | 2025-05-28 | Upper Triangular Matrix Multiplication | [Link](./day079/) |                    |
+| 80  | 2025-05-29 | Matrix Multiplication with Swish Activation and Scaling | [Link](./day080/) |                    |
 
 ## Rules
 
