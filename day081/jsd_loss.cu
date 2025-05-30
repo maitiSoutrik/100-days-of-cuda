@@ -284,6 +284,15 @@ void jsd_loss_gpu(const float* P, const float* Q, float* d_loss,
     CHECK_CUDA_ERROR(cudaFree(d_per_row_loss));
 }
 
+// Helper host function for KL divergence component (CPU version)
+static float kl_divergence_element_cpu(float val_dist, float val_m, float epsilon) {
+    // Ensure val_dist and val_m are positive and non-zero to avoid log(0) or division by zero
+    val_dist = fmaxf(val_dist, epsilon);
+    val_m = fmaxf(val_m, epsilon);
+    if (val_dist <= epsilon) return 0.0f; // if p is zero, contribution is zero
+    return val_dist * logf(val_dist / val_m);
+}
+
 // CPU implementation for forward pass (for benchmarking/verification)
 float jsd_loss_forward_cpu(const std::vector<float>& h_P, const std::vector<float>& h_Q,
                            int num_distributions, int num_elements,
@@ -301,8 +310,8 @@ float jsd_loss_forward_cpu(const std::vector<float>& h_P, const std::vector<floa
             float m_val = 0.5f * (p_val + q_val);
             m_val = fmaxf(m_val, epsilon);
 
-            float kl_p_m = kl_divergence_element(p_val, m_val, epsilon);
-            float kl_q_m = kl_divergence_element(q_val, m_val, epsilon);
+            float kl_p_m = kl_divergence_element_cpu(p_val, m_val, epsilon);
+            float kl_q_m = kl_divergence_element_cpu(q_val, m_val, epsilon);
             
             float current_jsd_contrib = 0.0f;
             if (fabsf(beta - 0.5f) < epsilon) {
