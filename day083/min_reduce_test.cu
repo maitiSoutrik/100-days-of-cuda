@@ -67,39 +67,61 @@ class MinReductionTest : public ::testing::TestWithParam<std::tuple<std::vector<
 protected:
     void runTest(const std::vector<size_t>& shape, int dim_to_reduce) {
         size_t total_input_elements = 1;
-        for (size_t s : shape) total_input_elements *= s;
+        bool any_input_shape_dim_is_zero = false;
+        for (size_t s : shape) {
+            if (s == 0) any_input_shape_dim_is_zero = true;
+            total_input_elements *= s;
+        }
 
         if (dim_to_reduce < 0 || static_cast<size_t>(dim_to_reduce) >= shape.size()) {
             GTEST_SKIP() << "Invalid dimension to reduce: " << dim_to_reduce << " for shape size " << shape.size();
             return;
         }
         
+        // Case 1: The dimension to be reduced is itself of size 0.
+        // Example: shape = {5, 0, 6}, dim_to_reduce = 1.
+        // Expected: min_reduction_dimension_cuda prints "Error: Size of dimension to reduce..." and returns.
         if (shape[dim_to_reduce] == 0) {
-            // The main code has a check for this and returns.
-            // For GTest, we can assert specific behavior or skip.
-            // Let's assume the CUDA function handles this by not crashing and possibly producing an empty/default output.
-            // Here, we'll skip direct testing of this case as the function is expected to return early.
-            // Or, we can test that it *does* return early without error.
-            // For now, let's verify it doesn't crash.
-             std::vector<float> h_input(total_input_elements > 0 ? total_input_elements : 1, 1.0f); // Dummy input
-             std::vector<size_t> output_shape_vec;
-             size_t total_output_elements = 0; // Expect 0 output elements
-             std::vector<float> h_output_gpu(1); // Dummy output
+            float *d_input_dummy, *d_output_dummy;
+            std::vector<float> h_dummy(1, 0.0f); // Host dummy data for potential copy
 
-             float *d_input, *d_output;
-             CHECK_CUDA_ERROR_GTEST(cudaMalloc(&d_input, (total_input_elements > 0 ? total_input_elements : 1) * sizeof(float)));
-             CHECK_CUDA_ERROR_GTEST(cudaMalloc(&d_output, 1 * sizeof(float))); // Minimal allocation
-             CHECK_CUDA_ERROR_GTEST(cudaMemcpy(d_input, h_input.data(), (total_input_elements > 0 ? total_input_elements : 1) * sizeof(float), cudaMemcpyHostToDevice));
+            CHECK_CUDA_ERROR_GTEST(cudaMalloc(&d_input_dummy, 1 * sizeof(float)));
+            CHECK_CUDA_ERROR_GTEST(cudaMalloc(&d_output_dummy, 1 * sizeof(float)));
+            // Copy dummy data to ensure device pointers are valid if runtime checks them before use
+            CHECK_CUDA_ERROR_GTEST(cudaMemcpy(d_input_dummy, h_dummy.data(), 1 * sizeof(float), cudaMemcpyHostToDevice));
+            
+            min_reduction_dimension_cuda(d_input_dummy, dim_to_reduce, d_output_dummy, shape.data(), shape.size());
+            CHECK_CUDA_ERROR_GTEST(cudaDeviceSynchronize()); 
 
-             min_reduction_dimension_cuda(d_input, dim_to_reduce, d_output, shape.data(), shape.size());
-             CHECK_CUDA_ERROR_GTEST(cudaDeviceSynchronize()); // Check for launch errors
-
-             CHECK_CUDA_ERROR_GTEST(cudaFree(d_input));
-             CHECK_CUDA_ERROR_GTEST(cudaFree(d_output));
-             SUCCEED() << "Test with zero-sized reduction dimension ran without CUDA errors (expected early exit).";
+            CHECK_CUDA_ERROR_GTEST(cudaFree(d_input_dummy));
+            CHECK_CUDA_ERROR_GTEST(cudaFree(d_output_dummy));
+            SUCCEED() << "Test for reducing a zero-sized dimension: function expected to print 'Size of dimension to reduce... cannot be zero.' and return.";
             return;
         }
 
+        // Case 2: An input dimension *not* being reduced is 0, leading to total_input_elements = 0.
+        // Example: shape = {5, 0, 6}, dim_to_reduce = 0. Here total_input_elements is 0.
+        // Expected: min_reduction_dimension_cuda should return early (e.g., due to output_size == 0)
+        // without "Null pointer" errors, as we provide valid (dummy) pointers.
+        if (total_input_elements == 0 && any_input_shape_dim_is_zero) {
+            float *d_input_dummy, *d_output_dummy;
+            std::vector<float> h_dummy(1, 0.0f);
+
+            CHECK_CUDA_ERROR_GTEST(cudaMalloc(&d_input_dummy, 1 * sizeof(float)));
+            CHECK_CUDA_ERROR_GTEST(cudaMalloc(&d_output_dummy, 1 * sizeof(float)));
+            CHECK_CUDA_ERROR_GTEST(cudaMemcpy(d_input_dummy, h_dummy.data(), 1 * sizeof(float), cudaMemcpyHostToDevice));
+
+            min_reduction_dimension_cuda(d_input_dummy, dim_to_reduce, d_output_dummy, shape.data(), shape.size());
+            CHECK_CUDA_ERROR_GTEST(cudaDeviceSynchronize());
+
+            CHECK_CUDA_ERROR_GTEST(cudaFree(d_input_dummy));
+            CHECK_CUDA_ERROR_GTEST(cudaFree(d_output_dummy));
+            SUCCEED() << "Test for zero total input elements (due to a non-reduced dim being 0): function expected to return early.";
+            return;
+        }
+        
+        // Default case: Valid inputs, proceed with full test
+        ASSERT_GT(total_input_elements, 0) << "Test logic assumes non-zero total elements at this point.";
 
         std::vector<float> h_input(total_input_elements);
         std::mt19937 rng(12345); // Fixed seed for reproducibility
@@ -118,25 +140,9 @@ protected:
             output_shape_vec.push_back(1);
             total_output_elements = 1;
         }
-        
-        if (total_output_elements == 0 && total_input_elements > 0) {
-             // This means a non-reduced dimension was zero. Output is legitimately empty.
-             // The CUDA kernel should handle this by its output_size check or numBlocks being 0.
-             std::vector<float> h_output_gpu(1); // Dummy, won't be written to if output_size is 0
-             float *d_input, *d_output;
-             CHECK_CUDA_ERROR_GTEST(cudaMalloc(&d_input, total_input_elements * sizeof(float)));
-             CHECK_CUDA_ERROR_GTEST(cudaMalloc(&d_output, 1 * sizeof(float))); // Minimal allocation
-             CHECK_CUDA_ERROR_GTEST(cudaMemcpy(d_input, h_input.data(), total_input_elements * sizeof(float), cudaMemcpyHostToDevice));
-             
-             min_reduction_dimension_cuda(d_input, dim_to_reduce, d_output, shape.data(), shape.size());
-             CHECK_CUDA_ERROR_GTEST(cudaDeviceSynchronize());
-
-             CHECK_CUDA_ERROR_GTEST(cudaFree(d_input));
-             CHECK_CUDA_ERROR_GTEST(cudaFree(d_output));
-             SUCCEED() << "Test with zero-sized output (due to non-reduced dim being 0) ran without CUDA errors.";
-             return;
-        }
-
+        // If total_input_elements > 0, then total_output_elements must also be > 0 (or 1 for scalar result)
+        // The block for `total_output_elements == 0 && total_input_elements > 0` was determined to be unreachable.
+        ASSERT_GT(total_output_elements, 0) << "Output elements should be > 0 if input elements > 0.";
 
         std::vector<float> h_output_gpu(total_output_elements);
         std::vector<float> h_output_cpu(total_output_elements);
