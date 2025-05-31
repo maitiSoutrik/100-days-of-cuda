@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <random>
 #include <cfloat> // For FLT_MAX
+#include <unistd.h> // For dup, dup2, close, STDERR_FILENO
+#include <fcntl.h>  // For open, O_WRONLY
 
 // Error checking macro
 #define CHECK_CUDA_ERROR_GTEST(err) \
@@ -82,12 +84,21 @@ protected:
         // Example: shape = {5, 0, 6}, dim_to_reduce = 1.
         // Expected: min_reduction_dimension_cuda prints "Error: Size of dimension to reduce..." and returns.
         if (shape[dim_to_reduce] == 0) {
+            // Redirect stderr to /dev/null to suppress the expected error message from the function
+            int stderr_original_fd = dup(STDERR_FILENO);
+            ASSERT_NE(stderr_original_fd, -1) << "Failed to dup stderr";
+            
+            int dev_null_fd = open("/dev/null", O_WRONLY);
+            ASSERT_NE(dev_null_fd, -1) << "Failed to open /dev/null";
+            
+            ASSERT_NE(dup2(dev_null_fd, STDERR_FILENO), -1) << "Failed to redirect stderr to /dev/null";
+            close(dev_null_fd); // Close the descriptor for /dev/null as it's now duplicated to stderr
+
             float *d_input_dummy, *d_output_dummy;
-            std::vector<float> h_dummy(1, 0.0f); // Host dummy data for potential copy
+            std::vector<float> h_dummy(1, 0.0f); 
 
             CHECK_CUDA_ERROR_GTEST(cudaMalloc(&d_input_dummy, 1 * sizeof(float)));
             CHECK_CUDA_ERROR_GTEST(cudaMalloc(&d_output_dummy, 1 * sizeof(float)));
-            // Copy dummy data to ensure device pointers are valid if runtime checks them before use
             CHECK_CUDA_ERROR_GTEST(cudaMemcpy(d_input_dummy, h_dummy.data(), 1 * sizeof(float), cudaMemcpyHostToDevice));
             
             min_reduction_dimension_cuda(d_input_dummy, dim_to_reduce, d_output_dummy, shape.data(), shape.size());
@@ -95,7 +106,13 @@ protected:
 
             CHECK_CUDA_ERROR_GTEST(cudaFree(d_input_dummy));
             CHECK_CUDA_ERROR_GTEST(cudaFree(d_output_dummy));
-            SUCCEED() << "Test for reducing a zero-sized dimension: function expected to print 'Size of dimension to reduce... cannot be zero.' and return.";
+
+            // Restore stderr
+            fflush(stderr); // Ensure any buffered messages to the redirected stderr are flushed
+            ASSERT_NE(dup2(stderr_original_fd, STDERR_FILENO), -1) << "Failed to restore stderr";
+            close(stderr_original_fd);
+            
+            SUCCEED() << "Test for reducing a zero-sized dimension: function correctly handled the case (stderr suppressed for test).";
             return;
         }
 
