@@ -6,6 +6,7 @@
 #include <random>    // For std::mt19937, std::uniform_real_distribution
 #include <iomanip>   // For std::fixed, std::setprecision
 #include <chrono>    // For timing
+#include <cfloat>    // For FLT_MAX
 
 // Error checking macro
 #define CHECK_CUDA_ERROR(err) \
