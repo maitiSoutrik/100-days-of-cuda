@@ -100,25 +100,25 @@ int main() {
     // --- Verification ---
     bool success = compare_arrays(h_cpu_output.data(), h_gpu_output.data(), n);
     if (success) {
-        std::cout <&lt "\nVerification: SUCCESS! CPU and GPU results match." << std::endl;
+        std::cout << "\nVerification: SUCCESS! CPU and GPU results match." << std::endl;
     } else {
-        std::cout <&lt "\nVerification: FAILED! CPU and GPU results differ." << std::endl;
+        std::cout << "\nVerification: FAILED! CPU and GPU results differ." << std::endl;
         // For debugging, print both arrays if they are small enough
         if (n <= 32) {
-             std::cout <&lt "CPU reference:" << std::endl;
+             std::cout << "CPU reference:" << std::endl;
              print_array(h_cpu_output.data(), n, "CPU Output (Mismatch)");
-             std::cout <&lt "GPU result:" << std::endl;
+             std::cout << "GPU result:" << std::endl;
              print_array(h_gpu_output.data(), n, "GPU Output (Mismatch)");
         }
     }
     
     if (cpu_duration.count() > 0 && gpu_duration.count() > 0) {
-        std::cout <&lt "Speedup (CPU Time / GPU Time): " << std::fixed << std::setprecision(2) 
+        std::cout << "Speedup (CPU Time / GPU Time): " << std::fixed << std::setprecision(2) 
                   << cpu_duration.count() / gpu_duration.count() << "x" << std::endl;
     }
 
 
-    std::cout <&lt "\nNote: The current GPU kernel is a single-block implementation." << std::endl;
+    std::cout << "\nNote: The current GPU kernel is a single-block implementation." << std::endl;
     std::cout << "It's primarily for demonstrating the scan logic within a block." << std::endl;
     std::cout << "For larger arrays, a multi-block scan algorithm would be necessary for correctness and performance." << std::endl;
 
