@@ -105,6 +105,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 81  | 2025-05-30 | Generalized Jensen-Shannon Divergence Loss (Forward & Backward) | [Link](./day081/) |                    |
 | 82  | 2025-05-31 | Negative Cosine Similarity (Cosine Distance) | [Link](./day082/) | :heavy_check_mark: |
 | 83  | 2025-05-31 | Minimum Reduction Over a Specific Dimension | [Link](./day083/) | :heavy_check_mark: |
+| 84  | 2025-06-01 | Cumulative Product (Prefix Product / Scan) | [Link](./day084/) |                    |
 
 ## Rules
 
