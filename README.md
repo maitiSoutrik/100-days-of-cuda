@@ -108,6 +108,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 84  | 2025-06-01 | Cumulative Product (Prefix Product / Scan) | [Link](./day084/) |                    |
 | 85  | 2025-06-02 | Tensor-Matrix Multiplication | [Link](./day085/) | :heavy_check_mark: |
 | 86  | 2025-06-03 | Hard Sigmoid Activation Function | [Link](./day086/) |                    |
+| 87  | 2025-06-03 | Softplus Activation Function | [Link](./day087/) |                    |
 
 ## Rules
 
