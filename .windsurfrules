@@ -1,0 +1,102 @@
+# .windsurfrules for 100 Days of CUDA Project (AI Assistant Guidelines)
+
+## 1. AI's Understanding of Project Context
+
+-   **Primary Goal:** Assist the USER in implementing and documenting CUDA programming concepts daily for 100 days.
+-   **Target Platform Focus:** All CUDA code generated or modified MUST be compatible with and aimed at the NVIDIA Jetson Nano (Compute Capability 5.3). AI suggestions should prioritize this target.
+-   **Development vs. Build/Test Environment:**
+    -   AI should understand that USER develops on macOS.
+    -   AI MUST recognize that compilation and execution (including testing) occur on the Jetson Nano, via the CI/CD pipeline, or a compatible environment.
+    -   AI MUST NOT suggest or assume local builds on the USER's macOS development machine are required or standard practice for this project.
+-   **Core Technologies:** AI assistance should revolve around CUDA C++ and CMake.
+
+## 2. Adherence to Directory Structure & File Conventions
+
+-   When creating or modifying files, AI MUST adhere to the `dayXXX` directory structure (e.g., `day001`, `day023`).
+-   For new day setups, AI MUST ensure or prompt for the creation of:
+    -   `dayXXX/CMakeLists.txt`
+    -   `dayXXX/`header(s) (`.h` or `.cuh`)
+    -   `dayXXX/`source file(s) (`.cu`) for core logic (NO `main` if benchmark/main exists).
+    -   `dayXXX/`main/benchmark source file (`*_main.cu`) if applicable.
+    -   `dayXXX/*_test.cu` for Google Tests.
+    -   `dayXXX/README.md`.
+-   AI MUST follow established file naming conventions (e.g., `mish_activation_test.cu`).
+-   AI should be aware of and correctly interact with root-level files:
+    -   Root `CMakeLists.txt`
+    -   Root `README.md`
+    -   `.github/workflows/deploy-to-jetson.yml`
+
+## 3. CMake Assistance (Jetson Nano Focus)
+
+-   **Target Architecture:** All CMake configurations generated or modified by AI MUST target `sm_53` for Jetson Nano.
+-   **Top-Level `CMakeLists.txt`:** When a new day is added, AI should correctly guide adding `add_subdirectory(dayXXX)` if requested.
+-   **Per-Day `CMakeLists.txt`:** AI-generated or modified `CMakeLists.txt` for a `dayXXX` directory MUST include:
+    -   `cmake_minimum_required(VERSION 3.10)` or higher.
+    -   `project(dayXXX_concept CUDA CXX)`.
+    -   `set(CMAKE_CUDA_ARCHITECTURES 53)`.
+    -   Optimization flags, typically `-O3` (e.g., `set(CMAKE_CUDA_FLAGS \"${CMAKE_CUDA_FLAGS} -O3\")`).
+    -   Consistent C++ standard (e.g., `CXX_STANDARD 14`).
+    -   **Library Pattern Adherence:**
+        -   Guide creation of a static library (e.g., `add_library(my_lib STATIC core_logic.cu)`) for core CUDA logic (NO `main` function).
+        -   Link this library correctly (e.g., `target_link_libraries(my_lib PRIVATE ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES} m)`). Avoid `CUDA::cudart` if `${CUDA_LIBRARIES}` is preferred for consistency.
+        -   Ensure headers are accessible (`target_include_directories(my_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})`).
+    -   **Main/Benchmark Executable:** Guide creation with `add_executable` and link against the static library.
+    -   **Test Executable:** Guide creation with `add_executable` and link against the static library and Google Test (e.g., `GTest::gtest GTest::gmock GTest::gtest_main`).
+    -   Enable testing with `include(GoogleTest)` and `gtest_discover_tests` or `add_test`.
+
+## 4. AI Code Generation Standards
+
+-   **Language & Standard:** Generate CUDA C++ code adhering to the project's C++ standard (e.g., C++14).
+-   **Error Handling:** Consistently include and use error-checking macros (e.g., `CHECK_CUDA_ERROR`). If not defined, AI can suggest a standard implementation.
+-   **CUDA Constructs:** Use `__global__` for kernels and `__device__` for device helper functions.
+-   **Memory Management:**
+    -   Generated code MUST use explicit device memory management (`cudaMalloc`, `cudaMemcpy`, `cudaFree`).
+    -   All memory operations MUST include success/error checking.
+    -   Use `cudaMallocManaged` only if specifically requested by the USER for a particular reason and document its use.
+-   **Performance:**
+    -   Where appropriate, AI can suggest or implement optimizations like memory coalescing or shared memory usage, explaining the rationale and expected benefits for the Jetson Nano.
+    -   If suggesting CPU comparison code, ensure it's relevant for benchmarking.
+-   **Constants:** Use `#define` or `const` for constants.
+-   **Clarity & Comments:** Generated code MUST be clear, readable, with meaningful names, and include comments explaining complex logic or CUDA-specifics.
+
+## 5. Documentation Assistance (`README.md`)
+
+-   **Root `README.md`:** If assisting with adding a new day, AI can help update the progress table (Day, Date, Description, Link).
+-   **Per-Day `README.md`:** AI MUST assist in structuring and populating the per-day `README.md` with all required sections:
+    -   `## Overview` / `## Introduction`
+    -   `## Implementation Details`
+    -   `## Key CUDA Features Used` / `## Key CUDA Concepts`
+    -   `## Performance Considerations` / `## Performance Analysis` (Emphasize Jetson Nano context, CPU vs. GPU comparisons).
+    -   `## Building and Running` (CMake instructions for the target environment).
+    -   `## Execution Results` / `## Output` (AI should prompt USER to include actual console output from Jetson Nano).
+    -   `## Learnings and Observations`
+    -   `(Optional) ## Future Improvements`
+    -   `(Optional) ## References` / `## Resources Used`
+
+## 6. Testing and Execution Focus
+
+-   **Build/Execution Environment:** AI MUST reinforce that compilation and execution are for the Jetson Nano (or CI equivalent) and NOT the local macOS machine.
+-   **Jetson Nano Compatibility:** All code suggestions MUST be compatible with Compute Capability 5.3.
+-   **Verification:** AI can help include verification logic in the main executables.
+-   **Unit Testing (Google Test):**
+    -   AI MUST assist in creating or modifying unit tests in `*_test.cu` files using Google Test.
+    -   Tests should cover core kernel logic and helper functions.
+    -   AI should aim for tests that are expected to pass.
+-   **CI/CD Awareness:** AI should be mindful of the existing `.github/workflows/deploy-to-jetson.yml` and ensure suggestions do not break the CI/CD pipeline (e.g., executable paths, `ctest` integration).
+
+## 7. Dependency Management
+
+-   AI should be aware of core dependencies: CUDA Toolkit, CMake (>=3.10), Google Test.
+-   When new CUDA libraries (cuRAND, cuBLAS, etc.) or external libraries (OpenCV) are used, AI MUST prompt or assist the USER to:
+    -   Specify them in the day's `README.md`.
+    -   Configure and link them correctly in the day's `CMakeLists.txt`.
+    -   Remind USER to ensure availability on the build/target environment.
+
+## 8. General AI Interaction Guidelines
+
+-   **Consistency:** AI suggestions should align with the style and structure of existing code in the project.
+-   **Focus:** Help USER focus on one core CUDA concept or application per day.
+-   **Clarity & Correctness First:** Prioritize generating correct and clear code/documentation, then discuss performance optimizations.
+-   **Jetson Nano Performance:** When discussing performance, AI should always relate it back to the Jetson Nano context.
+-   **Proactive Reminders:** AI can proactively remind USER of these rules if a request seems to deviate (e.g., "Remember, we need to ensure this CMake change targets sm_53 for the Jetson Nano.").
+-   **Iterative Refinement:** AI should be prepared to iterate on suggestions based on USER feedback and these rules.
