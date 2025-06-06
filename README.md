@@ -109,6 +109,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 85  | 2025-06-02 | Tensor-Matrix Multiplication | [Link](./day085/) | :heavy_check_mark: |
 | 86  | 2025-06-03 | Hard Sigmoid Activation Function | [Link](./day086/) |                    |
 | 87  | 2025-06-03 | Softplus Activation Function | [Link](./day087/) |                    |
+| 88  | 2025-06-05 | Warp-Level Programming - Warp Sum Reduction | [Link](./day088/) |                    |
 
 ## Rules
 
