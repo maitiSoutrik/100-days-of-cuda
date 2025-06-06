@@ -110,6 +110,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 86  | 2025-06-03 | Hard Sigmoid Activation Function | [Link](./day086/) |                    |
 | 87  | 2025-06-03 | Softplus Activation Function | [Link](./day087/) |                    |
 | 88  | 2025-06-05 | Warp-Level Programming - Warp Sum Reduction | [Link](./day088/) |                    |
+| 89  | 2025-06-05 | Memory Coalescing Demonstration             | [Link](./day089/) |                    |
 
 ## Rules
 
