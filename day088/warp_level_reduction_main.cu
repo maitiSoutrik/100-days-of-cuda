@@ -13,19 +13,20 @@ void printArray(const std::string& name, const int* arr, int size) {
 }
 
 int main() {
+    const int hostWarpSize = 32; // Define warpSize for host code
     const int num_elements = 256; // Example: 8 warps if blockDim.x is 256
     const int block_size = 256;   // Threads per block
 
-    if (num_elements % warpSize != 0) {
-        std::cerr << "Error: num_elements must be a multiple of warpSize (" << warpSize << ") for this example." << std::endl;
+    if (num_elements % hostWarpSize != 0) {
+        std::cerr << "Error: num_elements must be a multiple of warpSize (" << hostWarpSize << ") for this example." << std::endl;
         return 1;
     }
-    if (block_size % warpSize != 0) {
-        std::cerr << "Error: block_size must be a multiple of warpSize (" << warpSize << ") for this example." << std::endl;
+    if (block_size % hostWarpSize != 0) {
+        std::cerr << "Error: block_size must be a multiple of warpSize (" << hostWarpSize << ") for this example." << std::endl;
         return 1;
     }
 
-    const int num_warps = num_elements / warpSize;
+    const int num_warps = num_elements / hostWarpSize;
 
     std::vector<int> h_input(num_elements);
     std::iota(h_input.begin(), h_input.end(), 1); // Fill with 1, 2, ..., num_elements
@@ -54,8 +55,8 @@ int main() {
     // CPU verification
     for (int i = 0; i < num_warps; ++i) {
         h_output_cpu[i] = 0;
-        for (int j = 0; j < warpSize; ++j) {
-            h_output_cpu[i] += h_input[i * warpSize + j];
+        for (int j = 0; j < hostWarpSize; ++j) {
+            h_output_cpu[i] += h_input[i * hostWarpSize + j];
         }
     }
 

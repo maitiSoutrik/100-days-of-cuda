@@ -6,12 +6,13 @@
 
 // Helper to initialize data and run the kernel for testing
 void run_warp_reduction_test(const std::vector<int>& h_input, std::vector<int>& h_output_gpu) {
+    const int hostWarpSize = 32; // Define warpSize for host code
     const int num_elements = h_input.size();
-    if (num_elements == 0 || num_elements % warpSize != 0) {
-        ADD_FAILURE() << "Test input size must be non-zero and a multiple of warpSize.";
+    if (num_elements == 0 || num_elements % hostWarpSize != 0) {
+        ADD_FAILURE() << "Test input size must be non-zero and a multiple of hostWarpSize.";
         return;
     }
-    const int num_warps = num_elements / warpSize;
+    const int num_warps = num_elements / hostWarpSize;
     h_output_gpu.resize(num_warps);
 
     int *d_input, *d_output;
@@ -24,8 +25,8 @@ void run_warp_reduction_test(const std::vector<int>& h_input, std::vector<int>& 
     // For simplicity in testing, let's try to fit into one block if possible,
     // or ensure blockDim.x is a multiple of warpSize.
     int threads_per_block = std::min(num_elements, 256); // Max 256 threads for this test, can be adjusted
-    if (threads_per_block % warpSize != 0) { // Ensure threads_per_block is multiple of warpSize
-        threads_per_block = ((threads_per_block + warpSize - 1) / warpSize) * warpSize;
+    if (threads_per_block % hostWarpSize != 0) { // Ensure threads_per_block is multiple of hostWarpSize
+        threads_per_block = ((threads_per_block + hostWarpSize - 1) / hostWarpSize) * hostWarpSize;
         threads_per_block = std::min(threads_per_block, 1024); // Cap at max threads per block
     }
     if (num_elements < threads_per_block && num_elements > 0) {
