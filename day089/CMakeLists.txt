@@ -24,3 +24,21 @@ install(TARGETS memory_coalescing_main
 # Optional: Print install location
 message(STATUS "Executable will be installed to: ${CMAKE_INSTALL_PREFIX}/bin/day089")
 
+# Google Test
+include(GoogleTest)
+
+add_executable(memory_coalescing_test
+    memory_coalescing_test.cu
+    memory_coalescing.cu # Source file with kernel implementations
+)
+
+target_link_libraries(memory_coalescing_test PRIVATE
+    GTest::gtest_main
+    ${CUDA_LIBRARIES}
+)
+
+# Discover and add tests to CTest
+if(TARGET GTest::gtest_main)
+    gtest_discover_tests(memory_coalescing_test)
+endif()
+
