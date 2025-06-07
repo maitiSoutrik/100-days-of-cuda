@@ -112,6 +112,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 88  | 2025-06-05 | Warp-Level Programming - Warp Sum Reduction | [Link](./day088/) |                    |
 | 89  | 2025-06-05 | Memory Coalescing Demonstration             | [Link](./day089/) |                    |
 | 90  | 2025-06-06 | Frobenius Norm in CUDA                    | [Link](./day090/) | :heavy_check_mark: |
+| 91  | 2025-06-07 | Hinge Loss Implementation in CUDA         | [Link](./day091/) |                    |
 
 ## Rules
 
