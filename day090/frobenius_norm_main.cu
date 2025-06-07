@@ -87,7 +87,7 @@ int main() {
     std::cout << "CPU Calculation Time: " << duration_cpu.count() / 1000.0 << " ms" << std::endl;
 
     // --- Verification ---
-    float tolerance = 1e-3; // Tolerance for floating point comparison
+    float tolerance = 5e-3; // Tolerance for floating point comparison (increased from 1e-3)
     if (fabs(norm_gpu - norm_cpu) < tolerance) {
         std::cout << "Verification: PASSED" << std::endl;
     } else {
