@@ -19,18 +19,43 @@ __device__ __forceinline__ float warp_reduce_sum(float val) {
 
 // Block-level reduction for sum of squares
 __device__ __forceinline__ float block_reduce_sum(float val) {
-    static __shared__ float shared[WARP_SIZE];
-    int lane = threadIdx.x % WARP_SIZE;
-    int wid = threadIdx.x / WARP_SIZE;
-    
+    // Reduce within the warp. After this, lane 0 of each warp has the sum for that warp.
     val = warp_reduce_sum(val);
+
+    if (blockDim.x <= WARP_SIZE) {
+        // If the entire block is one warp or smaller,
+        // the sum computed by warp_reduce_sum is the final block sum.
+        // This sum is in 'val' of thread 0 (lane 0 of the first/only warp).
+        // The calling kernel uses the 'val' from thread 0.
+        return val;
+    }
+
+    // For blocks with multiple warps:
+    static __shared__ float shared_warp_sums[WARP_SIZE]; // Max WARP_SIZE warps in a block (e.g. 256 threads = 8 warps, 1024 threads = 32 warps)
     
-    if (lane == 0) shared[wid] = val;
-    __syncthreads();
+    int lane_id = threadIdx.x % WARP_SIZE;
+    int warp_id = threadIdx.x / WARP_SIZE;
     
-    val = (threadIdx.x < blockDim.x / WARP_SIZE) ? shared[lane] : 0;
-    if (wid == 0) val = warp_reduce_sum(val);
-    
+    // Each warp leader (lane_id == 0) writes its partial sum to shared memory.
+    if (lane_id == 0) {
+        shared_warp_sums[warp_id] = val;
+    }
+    __syncthreads(); // Ensure all warp sums are written before reading.
+
+    // The first warp (warp_id == 0) sums the results from shared memory.
+    if (warp_id == 0) {
+        // Each thread in the first warp picks up a sum from shared memory if it corresponds to an actual warp.
+        int num_active_warps = (blockDim.x + WARP_SIZE - 1) / WARP_SIZE;
+        if (lane_id < num_active_warps) {
+            val = shared_warp_sums[lane_id];
+        } else {
+            val = 0.0f; // Threads beyond num_active_warps contribute 0 to this sum.
+        }
+        val = warp_reduce_sum(val); // Reduce these sums within the first warp. Result in thread 0.
+    }
+    // After this, 'val' in thread 0 (lane 0 of warp 0) contains the total sum for the block.
+    // Other threads' 'val' are not guaranteed to hold the final sum here.
+    // The calling kernel (rms_norm_kernel_optimized) correctly uses thread 0's 'val'.
     return val;
 }
 
