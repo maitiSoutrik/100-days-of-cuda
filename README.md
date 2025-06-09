@@ -114,6 +114,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 90  | 2025-06-06 | Frobenius Norm in CUDA                    | [Link](./day090/) | :heavy_check_mark: |
 | 91  | 2025-06-07 | Hinge Loss Implementation in CUDA         | [Link](./day091/) |                    |
 | 92  | 2025-06-08 | ELU Activation Function Implementation in CUDA | [Link](./day092/) |                    |
+| 93  | 2025-06-09 | RMS Normalization Implementation in CUDA | [Link](./day093/) | :heavy_check_mark: |
 ## Rules
 
 1. Code CUDA kernels consistently for 100 days without any gaps
