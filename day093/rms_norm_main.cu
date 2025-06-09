@@ -2,6 +2,8 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
+#include <chrono>
+#include <algorithm> // For std::min
 
 void print_device_info() {
     int device_count;
@@ -201,9 +203,9 @@ void compare_rms_vs_layer_norm() {
     std::cout << "Efficiency gain: " << std::fixed << std::setprecision(1) << (100.0f * (layer_time - rms_time) / layer_time) << "%\n";
     
     // Show sample outputs
-    print_tensor(h_input, 1, 1, min(hidden_dim, 8), "Sample Input", 8);
-    print_tensor(h_output_rms, 1, 1, min(hidden_dim, 8), "RMS Norm Output", 8);
-    print_tensor(h_output_layer, 1, 1, min(hidden_dim, 8), "Layer Norm Output", 8);
+    print_tensor(h_input, 1, 1, std::min(hidden_dim, 8), "Sample Input", 8);
+    print_tensor(h_output_rms, 1, 1, std::min(hidden_dim, 8), "RMS Norm Output", 8);
+    print_tensor(h_output_layer, 1, 1, std::min(hidden_dim, 8), "Layer Norm Output", 8);
     
     // Cleanup
     delete[] h_input;
