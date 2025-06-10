@@ -115,6 +115,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 91  | 2025-06-07 | Hinge Loss Implementation in CUDA         | [Link](./day091/) |                    |
 | 92  | 2025-06-08 | ELU Activation Function Implementation in CUDA | [Link](./day092/) |                    |
 | 93  | 2025-06-09 | RMS Normalization Implementation in CUDA | [Link](./day093/) | :heavy_check_mark: |
+| 94  | 2025-06-10 | CUDA Implementation of Forward and Simplified Reverse Diffusion Steps | [Link](./day094/) |                    |
 ## Rules
 
 1. Code CUDA kernels consistently for 100 days without any gaps
