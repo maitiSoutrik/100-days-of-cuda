@@ -8,7 +8,7 @@
 // Forward declaration of the kernel launcher if not in .cuh
 // void generate_fern_kernel_launcher(...);
 
-void save_pgm(const char* filename, const unsigned int* buffer, int width, int height);
+void save_ppm(const char* filename, const unsigned int* buffer, int width, int height); // Renamed to save_ppm
 
 int main(int argc, char** argv) {
     std::cout << "Day 095: Barnsley Fern Fractal Generator" << std::endl;
@@ -81,9 +81,9 @@ int main(int argc, char** argv) {
     CHECK_CUDA_ERROR(cudaMemcpy(h_image_buffer.data(), d_image_buffer, image_width * image_height * sizeof(unsigned int), cudaMemcpyDeviceToHost));
     std::cout << "Copy finished." << std::endl;
 
-    // Save image to PGM
-    save_pgm("barnsley_fern.pgm", h_image_buffer.data(), image_width, image_height);
-    std::cout << "Saved fern to barnsley_fern.pgm" << std::endl;
+    // Save image to PPM
+    save_ppm("barnsley_fern.ppm", h_image_buffer.data(), image_width, image_height); // Changed to save_ppm and .ppm
+    std::cout << "Saved fern to barnsley_fern.ppm" << std::endl;
 
     // Cleanup
     CHECK_CUDA_ERROR(cudaFree(d_image_buffer));
@@ -92,44 +92,31 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-void save_pgm(const char* filename, const unsigned int* buffer, int width, int height) {
+void save_ppm(const char* filename, const unsigned int* buffer, int width, int height) { // Renamed to save_ppm
     std::ofstream outfile(filename, std::ios_base::out | std::ios_base::binary);
     if (!outfile.is_open()) {
-        std::cerr << "Error: Could not open PGM file for writing: " << filename << std::endl;
+        std::cerr << "Error: Could not open PPM file for writing: " << filename << std::endl;
         return;
     }
 
-    outfile << "P5\n";
+    outfile << "P6\n"; // PPM magic number for binary color
     outfile << width << " " << height << "\n";
-    outfile << 255 << "\n";
+    outfile << 255 << "\n"; // Max color component value
 
-    unsigned int min_hit_val = 0; 
-    unsigned int max_hit_val = 0; 
-    bool any_pixel_hit = false;
-
-    // First pass: find true min and max hit counts among *hit* pixels
+    std::vector<unsigned char> char_buffer(width * height * 3); // 3 bytes per pixel (R, G, B)
     for (int i = 0; i < width * height; ++i) {
-        if (buffer[i] > 0) {
-            if (!any_pixel_hit) { 
-                min_hit_val = buffer[i];
-                max_hit_val = buffer[i];
-                any_pixel_hit = true;
-            } else { 
-                if (buffer[i] < min_hit_val) min_hit_val = buffer[i];
-                if (buffer[i] > max_hit_val) max_hit_val = buffer[i];
-            }
+        int idx = i * 3;
+        if (buffer[i] > 0) { // If the pixel was hit by the fern
+            char_buffer[idx]     = 0;   // R (Red)
+            char_buffer[idx + 1] = 255; // G (Green)
+            char_buffer[idx + 2] = 0;   // B (Blue)
+        } else { // Background
+            char_buffer[idx]     = 0;   // R
+            char_buffer[idx + 1] = 0;   // G
+            char_buffer[idx + 2] = 0;   // B
         }
     }
 
-    std::vector<unsigned char> char_buffer(width * height);
-    for (int i = 0; i < width * height; ++i) {
-        if (buffer[i] > 0) {
-            char_buffer[i] = 255; // White if hit
-        } else {
-            char_buffer[i] = 0;   // Black if not hit
-        }
-    }
-
-    outfile.write(reinterpret_cast<const char*>(char_buffer.data()), width * height);
+    outfile.write(reinterpret_cast<const char*>(char_buffer.data()), char_buffer.size());
     outfile.close();
 }
