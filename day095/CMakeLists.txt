@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(day095_barnsley_fern CUDA CXX)
 
+find_package(CUDA COMPONENTS curand REQUIRED)
+
 set(CMAKE_CUDA_ARCHITECTURES 53)
 
 set(CMAKE_CXX_STANDARD 14)
