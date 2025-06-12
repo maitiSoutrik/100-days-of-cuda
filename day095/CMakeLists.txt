@@ -26,7 +26,7 @@ target_include_directories(barnsley_fern_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 add_executable(barnsley_fern_app
     barnsley_fern_main.cu
 )
-target_link_libraries(barnsley_fern_app PRIVATE barnsley_fern_lib CUDA::curand)
+target_link_libraries(barnsley_fern_app PRIVATE barnsley_fern_lib ${CUDA_CURAND_LIBRARIES})
 
 # Google Test setup
 include(GoogleTest)
@@ -34,7 +34,7 @@ include(GoogleTest)
 add_executable(barnsley_fern_test
     barnsley_fern_test.cu
 )
-target_link_libraries(barnsley_fern_test PRIVATE barnsley_fern_lib GTest::gtest_main CUDA::curand)
+target_link_libraries(barnsley_fern_test PRIVATE barnsley_fern_lib GTest::gtest_main ${CUDA_CURAND_LIBRARIES})
 
 include(CTest)
 gtest_discover_tests(barnsley_fern_test)
