@@ -99,18 +99,51 @@ void save_pgm(const char* filename, const unsigned int* buffer, int width, int h
         return;
     }
 
-    outfile << "P5\n"; // PGM magic number for binary grayscale
+    outfile << "P5\n";
     outfile << width << " " << height << "\n";
-    outfile << 255 << "\n"; // Max gray value
+    outfile << 255 << "\n";
 
-    std::vector<unsigned char> char_buffer(width * height);
+    unsigned int min_hit_val = 0; 
+    unsigned int max_hit_val = 0; 
+    bool any_pixel_hit = false;
+
+    // First pass: find true min and max hit counts among *hit* pixels
     for (int i = 0; i < width * height; ++i) {
         if (buffer[i] > 0) {
-            char_buffer[i] = 255; // White if hit
-        } else {
-            char_buffer[i] = 0;   // Black if not hit
+            if (!any_pixel_hit) { 
+                min_hit_val = buffer[i];
+                max_hit_val = buffer[i];
+                any_pixel_hit = true;
+            } else { 
+                if (buffer[i] < min_hit_val) min_hit_val = buffer[i];
+                if (buffer[i] > max_hit_val) max_hit_val = buffer[i];
+            }
         }
     }
+
+    std::vector<unsigned char> char_buffer(width * height); // Default initialized to 0s
+    
+    if (any_pixel_hit) { // Only do detailed processing if there's something to see
+        for (int i = 0; i < width * height; ++i) {
+            if (buffer[i] == 0) {
+                // char_buffer[i] is already 0 due to vector initialization
+            } else {
+                if (max_hit_val == min_hit_val) { 
+                    // All hit pixels have the same count, make them white
+                    char_buffer[i] = 255;
+                } else {
+                    // Normalize hit counts for non-zero pixels to 0-255 range
+                    float normalized_value = static_cast<float>(buffer[i] - min_hit_val) / (max_hit_val - min_hit_val);
+                    float scaled_value = normalized_value * 255.0f;
+                    // Round to nearest integer, then clamp to [0, 255]
+                    char_buffer[i] = static_cast<unsigned char>(
+                        std::min(255.0, std::max(0.0, std::round(scaled_value)))
+                    );
+                }
+            }
+        }
+    }
+    // If !any_pixel_hit, char_buffer remains all zeros, which is correct for a black image.
 
     outfile.write(reinterpret_cast<const char*>(char_buffer.data()), width * height);
     outfile.close();
