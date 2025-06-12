@@ -2,6 +2,7 @@
 #define BARNSLEY_FERN_CUH
 
 #include <cuda_runtime.h>
+#include <curand_kernel.h> // Added for curandState_t
 #include <cstdio> // For printf in macro
 
 // CUDA error checking macro
@@ -15,14 +16,14 @@
     } while(0)
 
 // Forward declarations for CUDA kernels
-__global__ void setup_kernel(curandState *state, unsigned long long seed, int num_threads);
+__global__ void setup_kernel(curandState_t *state, unsigned long long seed, int num_threads);
 
 __global__ void generate_fern_kernel(
     unsigned int* image_buffer,
     int image_width,
     int image_height,
     int num_iterations_per_thread,
-    curandState* rand_states,
+    curandState_t* rand_states,
     float fern_x_min, float fern_x_max, float fern_y_min, float fern_y_max,
     int warmup_iterations);
 

@@ -21,7 +21,7 @@ const float p3 = 0.01f + 0.85f + 0.07f; // Cumulative probability
 const float f4_a = -0.15f; const float f4_b = 0.28f; const float f4_c = 0.26f; const float f4_d = 0.24f; const float f4_e = 0.00f; const float f4_f = 0.44f;
 // p4 is implicitly up to 1.0
 
-__global__ void setup_kernel(curandState *state, unsigned long long seed, int num_threads) {
+__global__ void setup_kernel(curandState_t *state, unsigned long long seed, int num_threads) {
     int id = blockIdx.x * blockDim.x + threadIdx.x;
     if (id < num_threads) {
         curand_init(seed + id, id, 0, &state[id]);
@@ -33,12 +33,12 @@ __global__ void generate_fern_kernel(
     int image_width,
     int image_height,
     int num_iterations_per_thread, // Renamed for clarity
-    curandState* rand_states,
+    curandState_t* rand_states,
     float fern_x_min, float fern_x_max, float fern_y_min, float fern_y_max,
     int warmup_iterations) {
 
     int id = blockIdx.x * blockDim.x + threadIdx.x;
-    curandState local_rand_state = rand_states[id];
+    curandState_t local_rand_state = rand_states[id];
 
     float x = 0.0f;
     float y = 0.0f;
