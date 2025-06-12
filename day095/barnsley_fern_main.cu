@@ -137,7 +137,7 @@ void save_pgm(const char* filename, const unsigned int* buffer, int width, int h
                     float scaled_value = normalized_value * 255.0f;
                     // Round to nearest integer, then clamp to [0, 255]
                     char_buffer[i] = static_cast<unsigned char>(
-                        std::min(255.0, std::max(0.0, std::round(scaled_value)))
+                        std::min(255.0f, std::max(0.0f, std::round(scaled_value)))
                     );
                 }
             }
