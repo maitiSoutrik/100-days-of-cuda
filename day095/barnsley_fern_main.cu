@@ -103,46 +103,15 @@ void save_pgm(const char* filename, const unsigned int* buffer, int width, int h
     outfile << width << " " << height << "\n";
     outfile << 255 << "\n"; // Max gray value
 
-    // Find min and max hit counts for normalization (excluding zeros for better contrast if many pixels are empty)
-    unsigned int min_val = -1; // Max possible unsigned int
-    unsigned int max_val = 0;
-    bool first_hit = true;
-
-    for (int i = 0; i < width * height; ++i) {
-        if (buffer[i] > 0) { // Consider only pixels that were hit
-            if (first_hit) {
-                min_val = buffer[i];
-                max_val = buffer[i];
-                first_hit = false;
-            } else {
-                if (buffer[i] < min_val) min_val = buffer[i];
-                if (buffer[i] > max_val) max_val = buffer[i];
-            }
-        }
-    }
-    
-    if (first_hit) { // All pixels are zero, or no hits
-        min_val = 0;
-        max_val = 0; 
-    }
-    if (max_val == min_val) { // Uniform color (either all zero or all same hit count)
-         max_val = min_val + 1; // Avoid division by zero, ensure non-zero pixels become non-black
-    }
-
     std::vector<unsigned char> char_buffer(width * height);
     for (int i = 0; i < width * height; ++i) {
-        if (buffer[i] == 0) {
-            char_buffer[i] = 0; // Background (black)
+        if (buffer[i] > 0) {
+            char_buffer[i] = 255; // White if hit
         } else {
-            // Normalize hit counts to 0-255 range
-            // Using a non-linear scaling (e.g. log) might improve contrast for typical fractal distributions
-            // For now, simple linear scaling for non-zero pixels
-            float normalized_value = static_cast<float>(buffer[i] - min_val) / (max_val - min_val);
-            char_buffer[i] = static_cast<unsigned char>(std::min(255.0f, std::max(0.0f, normalized_value * 255.0f)));
+            char_buffer[i] = 0;   // Black if not hit
         }
     }
 
     outfile.write(reinterpret_cast<const char*>(char_buffer.data()), width * height);
     outfile.close();
 }
-
