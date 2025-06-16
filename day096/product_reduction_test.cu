@@ -48,18 +48,18 @@ TEST_P(ProductReductionTest, MatchesCPU) {
     for (float& v : h_input) v = dist(rng);
 
     // Device allocations
-    float *d_input, *d_output; size_t *d_shape;
+    float *d_input, *d_output; // size_t *d_shape; // d_shape no longer needed on device
     size_t before=1, after=1; for(int i=0;i<dim;++i) before*=shape[i]; for(size_t i=dim+1;i<shape.size();++i) after*=shape[i];
     size_t out_elems = before*after;
 
     CHECK_CUDA_ERROR_GTEST(cudaMalloc(&d_input, total_elems*sizeof(float)));
     CHECK_CUDA_ERROR_GTEST(cudaMalloc(&d_output, out_elems*sizeof(float)));
-    CHECK_CUDA_ERROR_GTEST(cudaMalloc(&d_shape, shape.size()*sizeof(size_t)));
+    // CHECK_CUDA_ERROR_GTEST(cudaMalloc(&d_shape, shape.size()*sizeof(size_t))); // d_shape no longer needed
 
     CHECK_CUDA_ERROR_GTEST(cudaMemcpy(d_input, h_input.data(), total_elems*sizeof(float), cudaMemcpyHostToDevice));
-    CHECK_CUDA_ERROR_GTEST(cudaMemcpy(d_shape, shape.data(), shape.size()*sizeof(size_t), cudaMemcpyHostToDevice));
+    // CHECK_CUDA_ERROR_GTEST(cudaMemcpy(d_shape, shape.data(), shape.size()*sizeof(size_t), cudaMemcpyHostToDevice)); // d_shape no longer needed
 
-    product_reduction_dimension_cuda(d_input, dim, d_output, d_shape, shape.size());
+    product_reduction_dimension_cuda(d_input, dim, d_output, shape.data(), shape.size()); // Pass host shape.data()
     CHECK_CUDA_ERROR_GTEST(cudaDeviceSynchronize());
 
     std::vector<float> h_output(out_elems);
@@ -72,7 +72,7 @@ TEST_P(ProductReductionTest, MatchesCPU) {
         ASSERT_NEAR(h_ref[i], h_output[i], 1e-4) << "Mismatch at index " << i;
     }
 
-    cudaFree(d_input); cudaFree(d_output); cudaFree(d_shape);
+    cudaFree(d_input); cudaFree(d_output); // cudaFree(d_shape); // d_shape was not allocated
 }
 
 INSTANTIATE_TEST_SUITE_P(

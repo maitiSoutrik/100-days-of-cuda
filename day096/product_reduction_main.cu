@@ -37,7 +37,7 @@ int main() {
     // Allocate device memory
     float* d_input = nullptr;
     float* d_output = nullptr;
-    size_t* d_shape = nullptr;
+    // size_t* d_shape = nullptr; // d_shape is no longer needed on device
 
     int reduce_dim = 1; // reduce over middle dimension (size 3)
 
@@ -47,12 +47,12 @@ int main() {
 
     cudaMalloc(&d_input, sizeof(float) * total_elems);
     cudaMalloc(&d_output, sizeof(float) * out_elems);
-    cudaMalloc(&d_shape, sizeof(size_t) * shape.size());
+    // cudaMalloc(&d_shape, sizeof(size_t) * shape.size()); // d_shape is no longer needed
 
     cudaMemcpy(d_input, h_input.data(), sizeof(float) * total_elems, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_shape, shape.data(), sizeof(size_t) * shape.size(), cudaMemcpyHostToDevice);
+    // cudaMemcpy(d_shape, shape.data(), sizeof(size_t) * shape.size(), cudaMemcpyHostToDevice); // d_shape is no longer needed
 
-    product_reduction_dimension_cuda(d_input, reduce_dim, d_output, d_shape, shape.size());
+    product_reduction_dimension_cuda(d_input, reduce_dim, d_output, shape.data(), shape.size()); // Pass host shape.data()
 
     std::vector<float> h_output(out_elems);
     cudaMemcpy(h_output.data(), d_output, sizeof(float) * out_elems, cudaMemcpyDeviceToHost);
@@ -71,6 +71,6 @@ int main() {
 
     cudaFree(d_input);
     cudaFree(d_output);
-    cudaFree(d_shape);
+    // cudaFree(d_shape); // d_shape was not allocated
     return correct ? 0 : 1;
 }

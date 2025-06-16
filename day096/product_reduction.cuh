@@ -25,7 +25,7 @@ extern "C" void product_reduction_dimension_cuda(
     const float* input,
     int          dim,
     float*       output,
-    const size_t* shape,
+    const size_t* host_shape, // Changed: shape is a host pointer
     size_t       ndim);
 
 #endif // PRODUCT_REDUCTION_CUH
