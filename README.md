@@ -119,6 +119,7 @@ I'll be developing code on my laptop and running it on a Jetson Nano for testing
 | 95  | 2025-06-12 | Barnsley Fern Fractal Generator (PPM Output) | [Link](./day095/) |                    |
 | 96  | 2025-06-15 | Product Reduction along a Tensor Dimension (Bugfix & Test) | [Link](./day096/) | :heavy_check_mark: |
 | 97  | 2025-06-17 | Fused RMSNorm + SwiGLU Activation | [Link](./day097/) |                    |
+| 98  | 2025-06-17 | Advanced Dynamic Parallelism: Mandelbrot Set with Adaptive Mesh Refinement | [Link](./day098/) |                    |
 ## Rules
 
 1. Code CUDA kernels consistently for 100 days without any gaps
