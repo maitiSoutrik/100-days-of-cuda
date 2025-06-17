@@ -13,7 +13,7 @@ int run_mandelbrot_iterations_test(double cx, double cy, int max_iter) {
 
     CHECK_CUDA_ERROR(cudaMalloc(&d_result, sizeof(int)));
     
-    test_mandelbrot_iterations_kernel<<<1, 1>>&gt(cx, cy, max_iter, d_result);
+    test_mandelbrot_iterations_kernel<<<1, 1>>>(cx, cy, max_iter, d_result);
     CHECK_CUDA_ERROR(cudaGetLastError()); // Check for kernel launch errors
     CHECK_CUDA_ERROR(cudaDeviceSynchronize()); // Wait for kernel to complete
 
