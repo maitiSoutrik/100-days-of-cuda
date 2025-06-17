@@ -12,8 +12,7 @@ set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3")
 # Enable C++11 features for CUDA, which are needed for dynamic parallelism
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --std=c++11 -rdc=true")
 # Link the cudadevrt library, which is necessary for dynamic parallelism
-set(CMAKE_CUDA_LIBRARIES "${CMAKE_CUDA_LIBRARIES} cudadevrt")
-
+# (cudadevrt will be linked directly to the target)
 
 # Define the library for the core Mandelbrot logic
 add_library(mandelbrot_amr_lib STATIC
@@ -21,7 +20,7 @@ add_library(mandelbrot_amr_lib STATIC
     mandelbrot_amr.cuh
 )
 target_include_directories(mandelbrot_amr_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(mandelbrot_amr_lib PRIVATE ${CUDA_LIBRARIES} ${CMAKE_CUDA_LIBRARIES})
+target_link_libraries(mandelbrot_amr_lib PRIVATE ${CUDA_LIBRARIES} cudadevrt)
 
 # Define the main executable
 add_executable(mandelbrot_main
