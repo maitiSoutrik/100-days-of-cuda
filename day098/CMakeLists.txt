@@ -10,7 +10,7 @@ set(CMAKE_CUDA_ARCHITECTURES 53)
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3")
 
 # Enable C++11 features for CUDA, which are needed for dynamic parallelism
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --std=c++11 -rdc=true")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -rdc=true") # CMAKE_CUDA_STANDARD handles the --std flag
 # Link the cudadevrt library, which is necessary for dynamic parallelism
 # (cudadevrt will be linked directly to the target)
 
